@@ -1,26 +1,104 @@
-import { Injectable } from '@nestjs/common';
-import { CreateAuthDto } from './dto/create-auth.dto';
-import { UpdateAuthDto } from './dto/update-auth.dto';
+import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import * as bcrypt from 'bcrypt';
+import { UsersService } from 'src/user/user.service';
+import { LoginDto } from './dto/login.dto';
+import { RegisterDto } from './dto/register.dto';
+import { User } from 'src/user/entities/user.entity';
 
 @Injectable()
 export class AuthService {
-  create(createAuthDto: CreateAuthDto) {
-    return 'This action adds a new auth';
-  }
+    constructor(
+        private readonly usersService: UsersService,
+        private readonly jwtService: JwtService,
+    ) {}
 
-  findAll() {
-    return `This action returns all auth`;
-  }
+    async register(registerDto: RegisterDto) {
+        // Verificar si el usuario ya existe
+        const existingUser = await this.usersService.findOneByEmail(registerDto.email);
+        
+        if (existingUser) {
+            throw new BadRequestException('El email ya está registrado');
+        }
 
-  findOne(id: number) {
-    return `This action returns a #${id} auth`;
-  }
+        // Crear el usuario (el hash de la contraseña se hace en UsersService)
+        const user = await this.usersService.create(registerDto);
 
-  update(id: number, updateAuthDto: UpdateAuthDto) {
-    return `This action updates a #${id} auth`;
-  }
+        // Generar token
+        const payload = { sub: user.id, email: user.email };
+        const token = this.jwtService.sign(payload);
 
-  remove(id: number) {
-    return `This action removes a #${id} auth`;
-  }
+        return {
+            message: 'Usuario registrado exitosamente',
+            user: {
+                id: user.id,
+                email: user.email,
+                name: user.name,
+                points: user.points,
+                level: user.level
+            },
+            token
+        };
+    }
+
+    async login(loginDto: LoginDto) {
+        // Buscar usuario por email
+        const user = await this.usersService.findOneByEmail(loginDto.email);
+
+        if (!user) {
+            throw new UnauthorizedException('Credenciales inválidas');
+        }
+
+        // Verificar si el usuario está activo
+        if (!user.isActive) {
+            throw new UnauthorizedException('La cuenta está desactivada');
+        }
+
+        // Verificar contraseña
+        const isPasswordValid = await bcrypt.compare(loginDto.password, user.password);
+
+        if (!isPasswordValid) {
+            throw new UnauthorizedException('Credenciales inválidas');
+        }
+
+        // Generar token
+        const payload = { sub: user.id, email: user.email };
+        const token = this.jwtService.sign(payload);
+
+        return {
+            message: 'Login exitoso',
+            user: {
+                id: user.id,
+                email: user.email,
+                name: user.name,
+                points: user.points,
+                level: user.level
+            },
+            token
+        };
+    }
+
+    async validateUser(userId: string): Promise<User> {
+        const user = await this.usersService.findOne(userId);
+        
+        if (!user || !user.isActive) {
+            throw new UnauthorizedException('Usuario no válido');
+        }
+
+        return user;
+    }
+
+    async getProfile(userId: string) {
+        const user = await this.usersService.findOne(userId);
+        
+        return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            points: user.points,
+            level: user.level,
+            avatar: user.avatar,
+            createdAt: user.createdAt
+        };
+    }
 }
