@@ -1,6 +1,6 @@
 import { Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
-// import { Habit } from "src/habits/habit.entity";
-// import { Achievement } from "src/achievements/achievement.entity";
+import { Habit } from "src/habits/entities/habit.entity";
+import { Achievement } from "src/achievements/entities/achievement.entity";
 
 @Entity('users')
 export class User {
@@ -62,9 +62,9 @@ export class User {
     updatedAt: Date;
 
     // Relaciones
-    // @OneToMany(() => Habit, (habit) => habit.user)
-    // habits: Habit[];
+    @OneToMany(() => Habit, (habit) => habit.user)
+    habits: Habit[];
 
-    // @OneToMany(() => Achievement, (achievement) => achievement.user)
-    // achievements: Achievement[];
+    @OneToMany(() => Achievement, (achievement) => achievement.user)
+    achievements: Achievement[];
 }

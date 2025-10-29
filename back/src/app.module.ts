@@ -7,6 +7,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { typeOrmConfig } from 'src/config/typeorm';
 import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
+import { HabitsModule } from './habits/habits.module';
+import { AchievementsModule } from './achievements/achievements.module';
 
 @Module({
   imports: [
@@ -19,7 +21,9 @@ import { AuthModule } from './auth/auth.module';
       useFactory: (configService: ConfigService) => configService.get('typeorm')!
     }),
     UserModule,
-    AuthModule
+    AuthModule,
+    HabitsModule,
+    AchievementsModule
   ],
   controllers: [AppController],
   providers: [AppService],
