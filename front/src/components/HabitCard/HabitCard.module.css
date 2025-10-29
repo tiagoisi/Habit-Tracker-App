@@ -1,0 +1,135 @@
+.card {
+    background: white;
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+.content {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.iconSection {
+    flex-shrink: 0;
+}
+
+.icon {
+    font-size: 2.5rem;
+    display: block;
+}
+
+.info {
+    flex: 1;
+}
+
+.title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1a202c;
+    margin: 0 0 0.5rem 0;
+}
+
+.description {
+    font-size: 0.9rem;
+    color: #718096;
+    margin: 0 0 0.75rem 0;
+}
+
+.stats {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.stat {
+    font-size: 0.85rem;
+    color: #4a5568;
+    background: #f7fafc;
+    padding: 0.25rem 0.75rem;
+    border-radius: 0.5rem;
+}
+
+.actions {
+    flex-shrink: 0;
+}
+
+.completeBtn {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    border: 3px solid #e2e8f0;
+    background: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.completeBtn:hover:not(:disabled) {
+    border-color: #3b82f6;
+    transform: scale(1.1);
+}
+
+.completeBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.completeBtn.completed {
+    background: linear-gradient(135deg, #3b82f6 0%, #10b981 100%);
+    border-color: #10b981;
+    color: white;
+}
+
+.footer {
+    display: flex;
+    gap: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e2e8f0;
+}
+
+.footerBtn {
+    flex: 1;
+    background: transparent;
+    border: none;
+    padding: 0.5rem;
+    font-size: 0.85rem;
+    color: #718096;
+    cursor: pointer;
+    border-radius: 0.5rem;
+    transition: all 0.2s;
+}
+
+.footerBtn:hover {
+    background: #f7fafc;
+    color: #3b82f6;
+}
+
+@media (max-width: 640px) {
+    .content {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .stats {
+        justify-content: center;
+    }
+
+    .actions {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+    }
+}

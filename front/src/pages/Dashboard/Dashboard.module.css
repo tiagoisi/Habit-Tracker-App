@@ -212,6 +212,20 @@
     box-shadow: 0 8px 16px rgba(59, 130, 246, 0.4);
 }
 
+.habitsList {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 1.5rem;
+}
+
+.loading {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f7fafc;
+}
+
 @media (max-width: 768px) {
     .headerContent {
         flex-direction: column;
@@ -239,5 +253,9 @@
 
     .addButton {
         width: 100%;
+    }
+    
+    .habitsList {
+        grid-template-columns: 1fr;
     }
 }
