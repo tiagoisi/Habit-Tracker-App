@@ -1,9 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import styles from './HabitCard.module.css';
 
 const HabitCard = ({ habit, onComplete, onUncomplete, onEdit, onDelete }) => {
     const [loading, setLoading] = useState(false);
-    const [isCompleted, setIsCompleted] = useState(false); // Esto debería venir del backend
+    const [isCompleted, setIsCompleted] = useState(habit.completedToday || false);
+
+    // Actualizar estado cuando cambia el hábito
+    useEffect(() => {
+        setIsCompleted(habit.completedToday || false);
+    }, [habit.completedToday]);
 
     const handleToggleComplete = async () => {
         setLoading(true);
