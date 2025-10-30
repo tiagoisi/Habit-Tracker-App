@@ -1,12 +1,13 @@
 .container {
     min-height: 100vh;
-    background-color: #f7fafc;
+    background: #0f0f0f;
 }
 
 .header {
-    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 70%, #f97316 100%);
+    background: linear-gradient(135deg, #1a1a1a 0%, #171717 100%);
     padding: 1.5rem 0;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border-bottom: 1px solid rgba(16, 185, 129, 0.15);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
 }
 
 .headerContent {
@@ -19,10 +20,14 @@
 }
 
 .logo {
-    color: white;
     font-size: 1.75rem;
     font-weight: 700;
+    background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
     margin: 0;
+    letter-spacing: -0.02em;
 }
 
 .userMenu {
@@ -39,51 +44,54 @@
 }
 
 .userName {
-    color: white;
+    color: #e2e8f0;
     font-weight: 600;
     font-size: 0.95rem;
 }
 
 .userPoints {
-    color: rgba(255, 255, 255, 0.9);
+    color: #10b981;
     font-size: 0.85rem;
+    font-weight: 500;
 }
 
 .logoutBtn {
-    background: rgba(255, 255, 255, 0.2);
-    color: white;
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+    border: 1px solid rgba(16, 185, 129, 0.2);
     padding: 0.5rem 1.25rem;
     border-radius: 0.5rem;
     font-size: 0.9rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.3s;
 }
 
 .logoutBtn:hover {
-    background: rgba(255, 255, 255, 0.3);
+    background: rgba(16, 185, 129, 0.15);
+    border-color: rgba(16, 185, 129, 0.3);
 }
 
 .main {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 2rem 1.5rem;
+    padding: 2.5rem 1.5rem;
 }
 
 .welcome {
-    margin-bottom: 2rem;
+    margin-bottom: 2.5rem;
 }
 
 .welcomeTitle {
     font-size: 2rem;
-    color: #1a202c;
+    color: #e2e8f0;
     margin: 0 0 0.5rem 0;
+    font-weight: 700;
 }
 
 .welcomeText {
-    color: #718096;
-    font-size: 1.1rem;
+    color: #94a3b8;
+    font-size: 1.05rem;
     margin: 0;
 }
 
@@ -95,23 +103,27 @@
 }
 
 .statCard {
-    background: white;
+    background: rgba(23, 23, 23, 0.6);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(16, 185, 129, 0.1);
     border-radius: 1rem;
-    padding: 1.5rem;
+    padding: 1.75rem;
     display: flex;
     align-items: center;
     gap: 1.25rem;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    transition: transform 0.2s, box-shadow 0.2s;
+    transition: all 0.3s ease;
 }
 
 .statCard:hover {
     transform: translateY(-4px);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    background: rgba(23, 23, 23, 0.8);
+    border-color: rgba(16, 185, 129, 0.2);
+    box-shadow: 0 10px 30px rgba(16, 185, 129, 0.1);
 }
 
 .statIcon {
     font-size: 2.5rem;
+    filter: grayscale(20%);
 }
 
 .statInfo {
@@ -123,21 +135,25 @@
 .statValue {
     font-size: 2rem;
     font-weight: 700;
-    color: #1a202c;
+    background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
     margin: 0;
 }
 
 .statLabel {
     font-size: 0.9rem;
-    color: #718096;
+    color: #94a3b8;
     margin: 0;
 }
 
 .habitsSection {
-    background: white;
+    background: rgba(23, 23, 23, 0.6);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(16, 185, 129, 0.1);
     border-radius: 1rem;
     padding: 2rem;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .sectionHeader {
@@ -149,25 +165,28 @@
 
 .sectionTitle {
     font-size: 1.5rem;
-    color: #1a202c;
+    color: #e2e8f0;
     margin: 0;
+    font-weight: 700;
 }
 
 .addButton {
-    background: linear-gradient(135deg, #3b82f6 0%, #f97316 100%);
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
     color: white;
     border: none;
     padding: 0.75rem 1.5rem;
-    border-radius: 0.5rem;
+    border-radius: 0.75rem;
     font-size: 0.95rem;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
 }
 
 .addButton:hover {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
     transform: translateY(-2px);
-    box-shadow: 0 8px 16px rgba(59, 130, 246, 0.4);
+    box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
 }
 
 .emptyState {
@@ -178,16 +197,18 @@
 .emptyIcon {
     font-size: 4rem;
     margin-bottom: 1rem;
+    filter: grayscale(30%);
 }
 
 .emptyTitle {
     font-size: 1.5rem;
-    color: #1a202c;
+    color: #cbd5e1;
     margin: 0 0 0.75rem 0;
+    font-weight: 600;
 }
 
 .emptyText {
-    color: #718096;
+    color: #94a3b8;
     font-size: 1rem;
     margin: 0 0 2rem 0;
     max-width: 400px;
@@ -196,20 +217,22 @@
 }
 
 .emptyButton {
-    background: linear-gradient(135deg, #3b82f6 0%, #f97316 100%);
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
     color: white;
     border: none;
     padding: 0.875rem 2rem;
-    border-radius: 0.5rem;
+    border-radius: 0.75rem;
     font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
 }
 
 .emptyButton:hover {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
     transform: translateY(-2px);
-    box-shadow: 0 8px 16px rgba(59, 130, 246, 0.4);
+    box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
 }
 
 .habitsList {
@@ -223,7 +246,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #f7fafc;
+    background: #0f0f0f;
 }
 
 @media (max-width: 768px) {
