@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@contexts/AuthContext';
 import styles from './Login.module.css';
+import Swal from 'sweetalert2';
 
 const Login = () => {
     const [formData, setFormData] = useState({ email: '', password: '' });
@@ -80,7 +81,15 @@ const Login = () => {
             await login(formData.email, formData.password);
             navigate('/dashboard');
         } catch (err) {
-            setError(err.response?.data?.message || 'Error al iniciar sesión');
+            console.error("There was a problem with your login:", error);
+            Swal.fire({
+                    icon: "error",
+                    title: "Oops...",
+                    text: "Something went wrong!",
+                    timer: 3000,
+                    showConfirmButton: false
+                });
+            console.log(err);            
         } finally {
             setLoading(false);
         }
