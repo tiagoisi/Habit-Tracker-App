@@ -3,32 +3,60 @@
     background: #0f0f0f;
 }
 
-.header {
-    background: linear-gradient(135deg, #1a1a1a 0%, #171717 100%);
-    padding: 1.5rem 0;
+/* Navbar */
+.navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: rgba(23, 23, 23, 0.95);
+    backdrop-filter: blur(20px);
     border-bottom: 1px solid rgba(16, 185, 129, 0.15);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    z-index: 100;
 }
 
-.headerContent {
+.navContent {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 0 1.5rem;
+    padding: 1rem 1.5rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
 
-.logo {
-    height: 40px;
-    width: auto;
-    object-fit: contain;
-    cursor: pointer;
+.logoContainer {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
     transition: transform 0.2s;
 }
 
-.logo:hover {
+.logoContainer:hover {
     transform: scale(1.05);
+}
+
+.logoImage {
+    height: 40px;
+    width: auto;
+    object-fit: contain;
+}
+
+.navLinks {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+}
+
+.navLink {
+    color: #94a3b8;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.95rem;
+    transition: color 0.2s;
+}
+
+.navLink:hover {
+    color: #10b981;
 }
 
 .userMenu {
@@ -42,6 +70,7 @@
     flex-direction: column;
     align-items: flex-end;
     gap: 0.25rem;
+    white-space: nowrap;
 }
 
 .userName {
@@ -66,6 +95,7 @@
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s;
+    white-space: nowrap;
 }
 
 .logoutBtn:hover {
@@ -76,7 +106,7 @@
 .main {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 2.5rem 1.5rem;
+    padding: 6rem 1.5rem 2.5rem; /* Padding top aumentado por navbar fija */
 }
 
 .welcome {
@@ -250,15 +280,49 @@
     background: #0f0f0f;
 }
 
-@media (max-width: 768px) {
-    .headerContent {
-        flex-direction: column;
+@media (max-width: 968px) {
+    .navContent {
+        flex-wrap: wrap;
         gap: 1rem;
     }
 
-    .userMenu {
+    .navLinks {
         width: 100%;
         justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+    .navLink {
+        font-size: 0.9rem;
+    }
+
+    .userMenu {
+        flex: 1;
+        justify-content: flex-end;
+        gap: 1rem;
+    }
+
+    .userInfo {
+        display: none;
+    }
+
+    .main {
+        padding-top: 7rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .navLinks {
+        gap: 0.5rem;
+    }
+
+    .navLink:first-child {
+        display: none;
+    }
+
+    .userMenu {
+        width: auto;
     }
 
     .welcomeTitle {

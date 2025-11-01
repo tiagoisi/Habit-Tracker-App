@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '@contexts/AuthContext';
 import { habitService } from '@services/habitService';
 import HabitCard from '@components/HabitCard/HabitCard';
@@ -101,26 +102,33 @@ const Dashboard = () => {
 
     return (
         <div className={styles.container}>
-            <header className={styles.header}>
-                <div className={styles.headerContent}>
-                    <img 
-                        src="/logo.png" 
-                        alt="Daily Forge" 
-                        className={styles.logo}
-                    />
-                    <div className={styles.userMenu}>
-                        <div className={styles.userInfo}>
-                            <span className={styles.userName}>{user?.name}</span>
-                            <span className={styles.userPoints}>
-                                ⭐ {user?.points || 0} pts · Nivel {user?.level || 1}
-                            </span>
+            {/* Navbar */}
+            <nav className={styles.navbar}>
+                <div className={styles.navContent}>
+                    <Link to="/" className={styles.logoContainer}>
+                        <img 
+                            src="/logo.png" 
+                            alt="Daily Forge" 
+                            className={styles.logoImage}
+                        />
+                    </Link>
+                    <div className={styles.navLinks}>
+                        <Link to="/" className={styles.navLink}>Inicio</Link>
+                        <Link to="/achievements" className={styles.navLink}>Logros</Link>
+                        <div className={styles.userMenu}>
+                            <div className={styles.userInfo}>
+                                <span className={styles.userName}>{user?.name}</span>
+                                <span className={styles.userPoints}>
+                                    ⭐ {user?.points || 0} pts · Nivel {user?.level || 1}
+                                </span>
+                            </div>
+                            <button onClick={logout} className={styles.logoutBtn}>
+                                Salir
+                            </button>
                         </div>
-                        <button onClick={logout} className={styles.logoutBtn}>
-                            Salir
-                        </button>
                     </div>
                 </div>
-            </header>
+            </nav>
 
             <main className={styles.main}>
                 <div className={styles.welcome}>
