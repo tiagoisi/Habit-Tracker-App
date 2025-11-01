@@ -103,7 +103,11 @@ const Dashboard = () => {
         <div className={styles.container}>
             <header className={styles.header}>
                 <div className={styles.headerContent}>
-                    <h1 className={styles.logo}>Daily Forge</h1>
+                    <img 
+                        src="/logo.png" 
+                        alt="Daily Forge" 
+                        className={styles.logo}
+                    />
                     <div className={styles.userMenu}>
                         <div className={styles.userInfo}>
                             <span className={styles.userName}>{user?.name}</span>

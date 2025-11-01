@@ -20,14 +20,15 @@
 }
 
 .logo {
-    font-size: 1.75rem;
-    font-weight: 700;
-    background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    margin: 0;
-    letter-spacing: -0.02em;
+    height: 40px;
+    width: auto;
+    object-fit: contain;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.logo:hover {
+    transform: scale(1.05);
 }
 
 .userMenu {
