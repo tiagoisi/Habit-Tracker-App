@@ -4,12 +4,14 @@ import { useAuth } from '@contexts/AuthContext';
 import { habitService } from '@services/habitService';
 import HabitCard from '@components/HabitCard/HabitCard';
 import HabitModal from '@components/HabitModal/HabitModal';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import styles from './Dashboard.module.css';
 
 const Dashboard = () => {
     const { user, logout } = useAuth();
     const [habits, setHabits] = useState([]);
     const [summary, setSummary] = useState(null);
+    const [monthlyData, setMonthlyData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingHabit, setEditingHabit] = useState(null);
@@ -27,11 +29,64 @@ const Dashboard = () => {
             ]);
             setHabits(habitsData);
             setSummary(summaryData);
+            
+            // Generar datos del mes actual
+            generateMonthlyData(habitsData);
         } catch (error) {
             console.error('Error al cargar datos:', error);
         } finally {
             setLoading(false);
         }
+    };
+
+    const generateMonthlyData = (habitsData) => {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = now.getMonth();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const today = now.getDate();
+        const maxHabits = habitsData.length || 5; // Máximo de hábitos posibles
+        
+        const data = [];
+        let previousValue = Math.floor(maxHabits * 0.6); // Empezar en ~60%
+        
+        for (let day = 1; day <= daysInMonth; day++) {
+            if (day <= today) {
+                // Crear variación realista con tendencia
+                const change = Math.random() * 4 - 2; // Entre -2 y +2
+                let completed = Math.round(previousValue + change);
+                
+                // Mantener dentro del rango válido
+                completed = Math.max(0, Math.min(maxHabits, completed));
+                
+                // Simular días malos ocasionales (15% de probabilidad)
+                if (Math.random() < 0.15) {
+                    completed = Math.floor(completed * 0.3);
+                }
+                
+                // Simular días perfectos ocasionales (10% de probabilidad)
+                if (Math.random() < 0.10) {
+                    completed = maxHabits;
+                }
+                
+                // Fines de semana tienden a ser más bajos
+                const dayOfWeek = new Date(year, month, day).getDay();
+                if (dayOfWeek === 0 || dayOfWeek === 6) { // Domingo o Sábado
+                    completed = Math.floor(completed * 0.7);
+                }
+                
+                data.push({
+                    daysInMonth,
+                    day,
+                    completed,
+                    label: `Día ${day}`
+                });
+                
+                previousValue = completed;
+            }
+        }
+        
+        setMonthlyData(data);
     };
 
     const handleSaveHabit = async (habitData) => {
@@ -167,6 +222,45 @@ const Dashboard = () => {
                         </div>
                     </div>
                 )}
+
+                {/* Gráfico de progreso mensual */}
+                <div className={styles.chartSection}>
+                    <h3 className={styles.chartTitle}>Progreso del Mes</h3>
+                    <div className={styles.chartContainer}>
+                        <ResponsiveContainer width="100%" height={300}>
+                            <LineChart data={monthlyData}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(16, 185, 129, 0.1)" />
+                                <XAxis 
+                                    dataKey="daysInMonth" 
+                                    stroke="#94a3b8"
+                                    tick={{ fill: '#94a3b8', fontSize: 12 }}
+                                />
+                                <YAxis 
+                                    stroke="#94a3b8"
+                                    tick={{ fill: '#94a3b8', fontSize: 12 }}
+                                    label={{ value: 'Hábitos completados', angle: -90, position: 'insideLeft', fill: '#94a3b8' }}
+                                />
+                                <Tooltip 
+                                    contentStyle={{
+                                        backgroundColor: 'rgba(23, 23, 23, 0.95)',
+                                        border: '1px solid rgba(16, 185, 129, 0.3)',
+                                        borderRadius: '0.5rem',
+                                        color: '#e2e8f0'
+                                    }}
+                                    labelStyle={{ color: '#10b981' }}
+                                />
+                                <Line 
+                                    type="monotone" 
+                                    dataKey="completed" 
+                                    stroke="#10b981" 
+                                    strokeWidth={3}
+                                    dot={{ fill: '#10b981', strokeWidth: 2, r: 5 }}
+                                    activeDot={{ r: 7, fill: '#34d399' }}
+                                />
+                            </LineChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
 
                 <div className={styles.habitsSection}>
                     <div className={styles.sectionHeader}>

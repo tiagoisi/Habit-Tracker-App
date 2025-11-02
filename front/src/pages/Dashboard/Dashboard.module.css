@@ -130,7 +130,29 @@
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 1.5rem;
+    margin-bottom: 2.5rem;
+}
+
+/* Gráfico de progreso */
+.chartSection {
+    background: rgba(23, 23, 23, 0.6);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(16, 185, 129, 0.1);
+    border-radius: 1rem;
+    padding: 2rem;
     margin-bottom: 3rem;
+}
+
+.chartTitle {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #e2e8f0;
+    margin: 0 0 1.5rem 0;
+}
+
+.chartContainer {
+    width: 100%;
+    height: 300px;
 }
 
 .statCard {
