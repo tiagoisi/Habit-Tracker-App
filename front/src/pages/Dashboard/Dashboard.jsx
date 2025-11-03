@@ -39,55 +39,42 @@ const Dashboard = () => {
         }
     };
 
-    const generateMonthlyData = (habitsData) => {
-        const now = new Date();
-        const year = now.getFullYear();
-        const month = now.getMonth();
-        const daysInMonth = new Date(year, month + 1, 0).getDate();
-        const today = now.getDate();
-        const maxHabits = habitsData.length || 5; // Máximo de hábitos posibles
-        
-        const data = [];
-        let previousValue = Math.floor(maxHabits * 0.6); // Empezar en ~60%
-        
-        for (let day = 1; day <= daysInMonth; day++) {
-            if (day <= today) {
-                // Crear variación realista con tendencia
-                const change = Math.random() * 4 - 2; // Entre -2 y +2
-                let completed = Math.round(previousValue + change);
-                
-                // Mantener dentro del rango válido
-                completed = Math.max(0, Math.min(maxHabits, completed));
-                
-                // Simular días malos ocasionales (15% de probabilidad)
-                if (Math.random() < 0.15) {
-                    completed = Math.floor(completed * 0.3);
-                }
-                
-                // Simular días perfectos ocasionales (10% de probabilidad)
-                if (Math.random() < 0.10) {
-                    completed = maxHabits;
-                }
-                
-                // Fines de semana tienden a ser más bajos
-                const dayOfWeek = new Date(year, month, day).getDay();
-                if (dayOfWeek === 0 || dayOfWeek === 6) { // Domingo o Sábado
-                    completed = Math.floor(completed * 0.7);
-                }
-                
-                data.push({
-                    daysInMonth,
-                    day,
-                    completed,
-                    label: `Día ${day}`
-                });
-                
-                previousValue = completed;
-            }
-        }
-        
-        setMonthlyData(data);
-    };
+const generateMonthlyData = (habitsData) => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const maxHabits = habitsData.length || 5;
+
+    const data = [];
+    let previousValue = Math.floor(maxHabits * 0.6); // punto de inicio base
+
+    for (let day = 1; day <= daysInMonth; day++) {
+        // Generar fluctuaciones más naturales con ondas (sube/baja) y aleatoriedad
+        const wave = Math.sin(day / 3) * 1.2; // movimiento suave
+        const randomChange = (Math.random() - 0.5) * 2; // variación aleatoria -1 a +1
+        let completed = Math.round(previousValue + wave + randomChange);
+
+        // Simular días de fines de semana con menos completados
+        const dayOfWeek = new Date(year, month, day).getDay();
+        if (dayOfWeek === 0 || dayOfWeek === 6) completed -= Math.floor(Math.random() * 2);
+
+        // Limitar el valor entre 0 y el máximo posible
+        completed = Math.max(0, Math.min(maxHabits, completed));
+
+        // Guardar el valor actual para continuidad
+        previousValue = completed;
+
+        data.push({
+            day,
+            completed,
+            label: `Día ${day}`,
+        });
+    }
+
+    setMonthlyData(data);
+};
+
 
     const handleSaveHabit = async (habitData) => {
         try {
@@ -228,18 +215,31 @@ const Dashboard = () => {
                     <h3 className={styles.chartTitle}>Progreso del Mes</h3>
                     <div className={styles.chartContainer}>
                         <ResponsiveContainer width="100%" height={300}>
-                            <LineChart data={monthlyData}>
+                            <LineChart data={monthlyData} margin={{ top: 10, right: 20, left: 0, bottom: 10 }}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(16, 185, 129, 0.1)" />
+                                
+                                {/* EJE X → días del mes */}
                                 <XAxis 
-                                    dataKey="daysInMonth" 
-                                    stroke="#94a3b8"
+                                    dataKey="day"
                                     tick={{ fill: '#94a3b8', fontSize: 12 }}
+                                    stroke="#94a3b8"
+                                    label={{ value: 'Día del mes', position: 'insideBottom', offset: -5, fill: '#94a3b8' }}
                                 />
+
+                                {/* EJE Y → cantidad de hábitos completados */}
                                 <YAxis 
-                                    stroke="#94a3b8"
                                     tick={{ fill: '#94a3b8', fontSize: 12 }}
-                                    label={{ value: 'Hábitos completados', angle: -90, position: 'insideLeft', fill: '#94a3b8' }}
+                                    stroke="#94a3b8"
+                                    allowDecimals={false}
+                                    label={{ 
+                                        value: 'Hábitos completados', 
+                                        angle: -90, 
+                                        position: 'insideLeft', 
+                                        fill: '#94a3b8',
+                                        dy: 50
+                                    }}
                                 />
+
                                 <Tooltip 
                                     contentStyle={{
                                         backgroundColor: 'rgba(23, 23, 23, 0.95)',
@@ -248,11 +248,13 @@ const Dashboard = () => {
                                         color: '#e2e8f0'
                                     }}
                                     labelStyle={{ color: '#10b981' }}
+                                    formatter={(value) => [`${value} hábitos`, 'Completados']}
                                 />
+
                                 <Line 
                                     type="monotone" 
                                     dataKey="completed" 
-                                    stroke="#10b981" 
+                                    stroke="#10b981"
                                     strokeWidth={3}
                                     dot={{ fill: '#10b981', strokeWidth: 2, r: 5 }}
                                     activeDot={{ r: 7, fill: '#34d399' }}
