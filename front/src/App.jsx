@@ -4,6 +4,7 @@ import Landing from '@pages/Landing/Landing';
 import Login from '@pages/Login/Login';
 import Register from '@pages/Register/Register';
 import Dashboard from '@pages/Dashboard/Dashboard';
+import Achievements from '@pages/Achievements/Achievements';
 import './App.css';
 
 // Componente para proteger rutas
@@ -61,6 +62,14 @@ function AppRoutes() {
                 element={
                     <PrivateRoute>
                         <Dashboard />
+                    </PrivateRoute>
+                }
+            />
+            <Route
+                path="/achievements"
+                element={
+                    <PrivateRoute>
+                        <Achievements />
                     </PrivateRoute>
                 }
             />
