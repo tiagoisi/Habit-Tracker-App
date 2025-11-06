@@ -130,7 +130,10 @@ const Achievements = () => {
                         <h2 className={styles.sectionTitle}>🔒 Por desbloquear</h2>
                         <div className={styles.achievementsGrid}>
                             {lockedAchievements.map((achievement) => (
-                                <div key={achievement.id} className={`${styles.achievementCard} ${styles.locked}`}>
+                                <div 
+                                    key={achievement.id} 
+                                    className={`${styles.achievementCard} ${styles.locked}`}
+                                >
                                     <div className={styles.achievementIcon}>
                                         {achievement.icon}
                                     </div>
