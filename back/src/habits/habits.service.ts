@@ -48,7 +48,6 @@ export class HabitsService {
                 
                 if (!updatedHabit) return habit; // Fallback si no se encuentra
 
-                // Verficiar hoy
                 const logToday = await this.habitLogRepository.findOne({
                     where: {
                         habitId: updatedHabit.id,
@@ -132,7 +131,7 @@ export class HabitsService {
 
         await this.usersService.addPoints(userId, { points: 10 });
 
-        // Recargar el hwbito con las estadisticas actualizadas de la DB
+        // Habito con las estadisticas actualizadas de la DB
         const updatedHabit = await this.habitRepository.findOne({ where: { id } });
         if (!updatedHabit) throw new NotFoundException(`Habito con id ${id} no encontrado`);
 

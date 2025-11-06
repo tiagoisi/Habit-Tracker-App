@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Achievement } from './entities/achievement.entity';
 import { AchievementType } from './entities/achievement.entity';
 import { UsersService } from 'src/user/user.service';
+import { Habit } from 'src/habits/entities/habit.entity';
 
 // Definición de logros predeterminados
 const DEFAULT_ACHIEVEMENTS = [
@@ -78,6 +79,8 @@ export class AchievementsService {
     constructor(
         @InjectRepository(Achievement)
         private readonly achievementRepository: Repository<Achievement>,
+        @InjectRepository(Habit)
+        private readonly habitRepository: Repository<Habit>,
         private readonly usersService: UsersService,
     ) {}
 
@@ -95,7 +98,6 @@ export class AchievementsService {
                     isUnlocked: false,
                 })
             );
-
             await this.achievementRepository.save(achievements);
         }
     }
@@ -104,7 +106,7 @@ export class AchievementsService {
     async findAllByUser(userId: string): Promise<Achievement[]> {
         // Asegurar que el usuario tenga logros inicializados
         await this.initializeAchievements(userId);
-
+        
         return await this.achievementRepository.find({
             where: { userId },
             order: { isUnlocked: 'DESC', requiredCount: 'ASC' },
@@ -164,19 +166,26 @@ export class AchievementsService {
         longestStreak: number;
         totalCompletions: number;
     }): Promise<Achievement[]> {
-        // Obtener total de completaciones del usuario
-        const userStats = await this.usersService.getUserStats(userId);
+        // ✅ CORRECCIÓN: Obtener el total de completaciones de TODOS los hábitos del usuario
+        const userHabits = await this.habitRepository.find({
+            where: { userId },
+            select: ['totalCompletions', 'longestStreak']
+        });
+
+        // Calcular totales
+        const totalUserCompletions = userHabits.reduce((sum, habit) => sum + habit.totalCompletions, 0);
+        const maxUserStreak = Math.max(...userHabits.map(h => h.longestStreak), 0);
 
         return await this.checkAndUnlockAchievements(userId, {
-            maxStreak: habitStats.longestStreak,
-            totalCompletions: userStats.totalHabits, // Total de hábitos del usuario
+            maxStreak: maxUserStreak,
+            totalCompletions: totalUserCompletions,
         });
     }
 
     // Obtener progreso de logros
     async getProgress(userId: string): Promise<any> {
         await this.initializeAchievements(userId);
-
+        
         const achievements = await this.findAllByUser(userId);
         const unlocked = achievements.filter(a => a.isUnlocked).length;
         const total = achievements.length;

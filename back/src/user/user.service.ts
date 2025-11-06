@@ -39,7 +39,7 @@ export class UsersService {
     async findAll(): Promise<User[]> {
         return await this.userRepository.find({
             select: ['id', 'email', 'name', 'points', 'level', 'avatar', 'isActive', 'createdAt'],
-            order: { points: 'DESC' } // Ordenar por puntos (ranking)
+            order: { points: 'DESC' }
         });
     }
 
@@ -67,18 +67,15 @@ export class UsersService {
     async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
         const user = await this.findOne(id);
 
-        // Si se actualiza el email, verificar que no exista
         if (updateUserDto.email && updateUserDto.email !== user.email) {
             const existingUser = await this.userRepository.findOne({
                 where: { email: updateUserDto.email }
             });
-
             if (existingUser) {
                 throw new BadRequestException('El email ya está en uso');
             }
         }
 
-        // Si se actualiza la contraseña, hashearla
         if (updateUserDto.password) {
             updateUserDto.password = await bcrypt.hash(updateUserDto.password, 10);
         }
@@ -102,10 +99,10 @@ export class UsersService {
     async addPoints(id: string, updatePointsDto: UpdatePointsDto): Promise<User> {
         const user = await this.findOne(id);
         user.points += updatePointsDto.points;
-
+        
         // Calcular nivel basado en puntos (cada 100 puntos = 1 nivel)
         user.level = Math.floor(user.points / 100) + 1;
-
+        
         return await this.userRepository.save(user);
     }
 
@@ -129,11 +126,11 @@ export class UsersService {
         }
 
         return {
-            // totalHabits: user.habits?.length || 0,
-            // totalAchievements: user.achievements?.length || 0,
             points: user.points,
             level: user.level,
-            nextLevelPoints: (user.level * 100) - user.points
+            nextLevelPoints: (user.level * 100) - user.points,
+            totalHabits: user.habits?.length || 0,
+            totalAchievements: user.achievements?.filter(a => a.isUnlocked).length || 0,
         };
     }
 }
