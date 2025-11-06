@@ -29,34 +29,42 @@ export class HabitsService {
         return await this.habitRepository.save(habit);
     }
 
+    // Traigo habitos del usuario y calculo racha
     async findAllByUser(userId: string): Promise<any[]> {
         const habits = await this.habitRepository.find({
             where: { userId, isActive: true },
             order: { createdAt: 'DESC' },
         });
 
-        // Verificar cuáles están completados hoy
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
-        const habitsWithStatus = await Promise.all(
+        const habitsWithStreaksAndStatus = await Promise.all(
             habits.map(async (habit) => {
+                
+                await this.updateHabitStats(habit);
+
+                const updatedHabit = await this.habitRepository.findOne({ where: { id: habit.id } });
+                
+                if (!updatedHabit) return habit; // Fallback si no se encuentra
+
+                // Verficiar hoy
                 const logToday = await this.habitLogRepository.findOne({
                     where: {
-                        habitId: habit.id,
+                        habitId: updatedHabit.id,
                         date: today,
                         completed: true,
                     },
                 });
 
                 return {
-                    ...habit,
+                    ...updatedHabit, 
                     completedToday: !!logToday,
                 };
             })
         );
 
-        return habitsWithStatus;
+        return habitsWithStreaksAndStatus;
     }
 
     async findOne(id: string, userId: string): Promise<Habit> {
@@ -93,7 +101,6 @@ export class HabitsService {
         return await this.habitRepository.save(habit);
     }
 
-    // Marcar hábito como completado
     async completeHabit(id: string, userId: string, completeHabitDto?: CompleteHabitDto): Promise<any> {
         const habit = await this.findOne(id, userId);
         const today = new Date();
@@ -121,13 +128,11 @@ export class HabitsService {
 
         await this.habitLogRepository.save(log);
 
-        // Actualizar estadísticas del hábito
         await this.updateHabitStats(habit);
 
-        // Sumar puntos al usuario
         await this.usersService.addPoints(userId, { points: 10 });
 
-        // Recargar el hábito con las estadísticas actualizadas
+        // Recargar el hwbito con las estadisticas actualizadas de la DB
         const updatedHabit = await this.habitRepository.findOne({ where: { id } });
         if (!updatedHabit) throw new NotFoundException(`Habito con id ${id} no encontrado`);
 
@@ -148,7 +153,6 @@ export class HabitsService {
         };
     }
 
-    // Desmarcar hábito
     async uncompleteHabit(id: string, userId: string): Promise<void> {
         const habit = await this.findOne(id, userId);
         const today = new Date();
@@ -174,7 +178,7 @@ export class HabitsService {
         await this.usersService.addPoints(userId, { points: -10 });
     }
 
-    // Actualizar estadísticas del hábito (streak, total)
+    // Calculo streak y totalCompletions.
     private async updateHabitStats(habit: Habit): Promise<void> {
         const logs = await this.habitLogRepository.find({
             where: { habitId: habit.id, completed: true },
@@ -182,27 +186,60 @@ export class HabitsService {
         });
 
         const totalCompletions = logs.length;
-
-        // Calcular streak actual
         let currentStreak = 0;
-        let checkDate = new Date();
-        checkDate.setHours(0, 0, 0, 0);
 
-        for (const log of logs) {
-            const logDate = new Date(log.date);
-            logDate.setHours(0, 0, 0, 0);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        let checkDate = new Date(today.getTime()); 
 
-            if (logDate.getTime() === checkDate.getTime()) {
-                currentStreak++;
-                checkDate.setDate(checkDate.getDate() - 1);
-            } else {
-                break;
+        if (logs.length === 0) {
+            currentStreak = 0;
+        } else {
+            const lastLogDate = new Date(logs[0].date);
+            lastLogDate.setHours(0, 0, 0, 0);
+            
+            const yesterday = new Date(today.getTime());
+            yesterday.setDate(yesterday.getDate() - 1);
+            yesterday.setHours(0, 0, 0, 0);
+            
+            let startIndex = 0;
+
+            if (lastLogDate.getTime() === today.getTime()) {
+                currentStreak = 1;
+                checkDate = yesterday; 
+                startIndex = 1;
+            } 
+
+            else if (lastLogDate.getTime() === yesterday.getTime()) {
+                currentStreak = 1;
+                checkDate.setDate(checkDate.getDate() - 2);
+                startIndex = 1;
+            } 
+
+            else {
+                currentStreak = 0;
+            }
+
+            // Continuar la racha hacia el pasado
+            for (let i = startIndex; i < logs.length; i++) {
+                const log = logs[i];
+                const logDate = new Date(log.date);
+                logDate.setHours(0, 0, 0, 0);
+
+                if (logDate.getTime() === checkDate.getTime()) {
+                    currentStreak++;
+                    checkDate.setDate(checkDate.getDate() - 1); 
+                } 
+                else if (logDate.getTime() < checkDate.getTime()) {
+                    break; 
+                }
             }
         }
+        
+        const longestStreak = Math.max(habit.longestStreak, currentStreak); 
 
-        const longestStreak = Math.max(habit.longestStreak, currentStreak);
-
-        // Actualizar solo los campos necesarios sin cargar relaciones
+        // Actualizar los campos en la DB
         await this.habitRepository.update(habit.id, {
             totalCompletions,
             currentStreak,
@@ -210,7 +247,6 @@ export class HabitsService {
         });
     }
 
-    // Obtener progreso del hábito (últimos 30 días)
     async getHabitProgress(id: string, userId: string): Promise<any> {
         const habit = await this.findOne(id, userId);
 
@@ -241,9 +277,8 @@ export class HabitsService {
         };
     }
 
-    // Obtener resumen de hoy
     async getTodaySummary(userId: string): Promise<any> {
-        const habits = await this.findAllByUser(userId);
+        const habits = await this.findAllByUser(userId); // Racha actualizada
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
