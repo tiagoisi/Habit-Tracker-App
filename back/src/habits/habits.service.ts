@@ -141,7 +141,6 @@ export class HabitsService {
             }
         );
 
-
         return {
             log,
             habit: updatedHabit,
