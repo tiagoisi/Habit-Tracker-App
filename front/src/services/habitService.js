@@ -58,4 +58,14 @@ export const habitService = {
         const response = await api.get('/habits/summary');
         return response.data;
     },
+
+     // ✅ NUEVO MÉTODO
+    async getMonthlyStats(year, month) {
+        const params = new URLSearchParams();
+        if (year) params.append('year', year);
+        if (month !== undefined) params.append('month', month);
+        
+        const response = await api.get(`/habits/monthly-stats?${params.toString()}`);
+        return response.data;
+    },
 };

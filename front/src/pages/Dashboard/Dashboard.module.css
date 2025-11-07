@@ -302,6 +302,28 @@
     background: #0f0f0f;
 }
 
+.emptyChart {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 300px;
+    color: #64748b;
+    font-size: 1.1rem;
+}
+
+.emptyChartSubtext {
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+    color: #94a3b8;
+}
+
+.statSubtext {
+    font-size: 0.75rem;
+    color: #64748b;
+    margin-top: 0.25rem;
+}
+
 @media (max-width: 968px) {
     .navContent {
         flex-wrap: wrap;

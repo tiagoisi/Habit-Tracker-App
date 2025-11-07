@@ -23,58 +23,20 @@ const Dashboard = () => {
     const loadData = async () => {
         try {
             setLoading(true);
-            const [habitsData, summaryData] = await Promise.all([
+            const [habitsData, summaryData, monthlyStats] = await Promise.all([
                 habitService.getAll(),
                 habitService.getTodaySummary(),
+                habitService.getMonthlyStats(), // ✅ Obtener datos reales
             ]);
             setHabits(habitsData);
             setSummary(summaryData);
-            
-            // Generar datos del mes actual
-            generateMonthlyData(habitsData);
+            setMonthlyData(monthlyStats.data || []); // ✅ Usar datos del backend
         } catch (error) {
             console.error('Error al cargar datos:', error);
         } finally {
             setLoading(false);
         }
     };
-
-const generateMonthlyData = (habitsData) => {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const maxHabits = habitsData.length || 5;
-
-    const data = [];
-    let previousValue = Math.floor(maxHabits * 0.6); // punto de inicio base
-
-    for (let day = 1; day <= daysInMonth; day++) {
-        // Generar fluctuaciones más naturales con ondas (sube/baja) y aleatoriedad
-        const wave = Math.sin(day / 3) * 1.2; // movimiento suave
-        const randomChange = (Math.random() - 0.5) * 2; // variación aleatoria -1 a +1
-        let completed = Math.round(previousValue + wave + randomChange);
-
-        // Simular días de fines de semana con menos completados
-        const dayOfWeek = new Date(year, month, day).getDay();
-        if (dayOfWeek === 0 || dayOfWeek === 6) completed -= Math.floor(Math.random() * 2);
-
-        // Limitar el valor entre 0 y el máximo posible
-        completed = Math.max(0, Math.min(maxHabits, completed));
-
-        // Guardar el valor actual para continuidad
-        previousValue = completed;
-
-        data.push({
-            day,
-            completed,
-            label: `Día ${day}`,
-        });
-    }
-
-    setMonthlyData(data);
-};
-
 
     const handleSaveHabit = async (habitData) => {
         try {
@@ -183,84 +145,114 @@ const generateMonthlyData = (habitsData) => {
                 </div>
 
                 {summary && (
-                    <div className={styles.stats}>
-                        <div className={styles.statCard}>
-                            <div className={styles.statIcon}>🎯</div>
-                            <div className={styles.statInfo}>
-                                <p className={styles.statValue}>{summary.totalHabits}</p>
-                                <p className={styles.statLabel}>Hábitos activos</p>
-                            </div>
-                        </div>
-
-                        <div className={styles.statCard}>
-                            <div className={styles.statIcon}>✅</div>
-                            <div className={styles.statInfo}>
-                                <p className={styles.statValue}>{summary.completedToday}</p>
-                                <p className={styles.statLabel}>Completados hoy</p>
-                            </div>
-                        </div>
-
-                        <div className={styles.statCard}>
-                            <div className={styles.statIcon}>📊</div>
-                            <div className={styles.statInfo}>
-                                <p className={styles.statValue}>{summary.completionRate}%</p>
-                                <p className={styles.statLabel}>Tasa de completación</p>
-                            </div>
+                <div className={styles.stats}>
+                    <div className={styles.statCard}>
+                        <div className={styles.statIcon}>🎯</div>
+                        <div className={styles.statInfo}>
+                            <p className={styles.statValue}>{summary.totalHabits}</p>
+                            <p className={styles.statLabel}>Hábitos activos</p>
                         </div>
                     </div>
-                )}
+
+                    <div className={styles.statCard}>
+                        <div className={styles.statIcon}>✅</div>
+                        <div className={styles.statInfo}>
+                            <p className={styles.statValue}>{summary.completedToday}</p>
+                            <p className={styles.statLabel}>Completados hoy</p>
+                        </div>
+                    </div>
+
+                    <div className={styles.statCard}>
+                        <div className={styles.statIcon}>📊</div>
+                        <div className={styles.statInfo}>
+                            {/* ✅ CAMBIO: Usar monthlyCompletionRate en vez de completionRate */}
+                            <p className={styles.statValue}>{summary.monthlyCompletionRate}%</p>
+                            <p className={styles.statLabel}>Tasa de completación</p>
+                             {/* ✅ Info adicional */}
+                            <p className={styles.statSubtext}>
+                                {summary.monthlyCompletions} de {summary.possibleCompletions} este mes
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                 )}
 
                 {/* Gráfico de progreso mensual */}
                 <div className={styles.chartSection}>
                     <h3 className={styles.chartTitle}>Progreso del Mes</h3>
                     <div className={styles.chartContainer}>
-                        <ResponsiveContainer width="100%" height={300}>
-                            <LineChart data={monthlyData} margin={{ top: 10, right: 20, left: 0, bottom: 10 }}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(16, 185, 129, 0.1)" />
-                                
-                                {/* EJE X → días del mes */}
-                                <XAxis 
-                                    dataKey="day"
-                                    tick={{ fill: '#94a3b8', fontSize: 12 }}
-                                    stroke="#94a3b8"
-                                    label={{ value: 'Día del mes', position: 'insideBottom', offset: -5, fill: '#94a3b8' }}
-                                />
+                        {monthlyData.length > 0 ? (
+                            <ResponsiveContainer width="100%" height={300}>
+                                <LineChart data={monthlyData} margin={{ top: 10, right: 20, left: 0, bottom: 10 }}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(16, 185, 129, 0.1)" />
+                                    
+                                    <XAxis 
+                                        dataKey="day"
+                                        tick={{ fill: '#94a3b8', fontSize: 12 }}
+                                        stroke="#94a3b8"
+                                        label={{ value: 'Día del mes', position: 'insideBottom', offset: -5, fill: '#94a3b8' }}
+                                    />
 
-                                {/* EJE Y → cantidad de hábitos completados */}
-                                <YAxis 
-                                    tick={{ fill: '#94a3b8', fontSize: 12 }}
-                                    stroke="#94a3b8"
-                                    allowDecimals={false}
-                                    label={{ 
-                                        value: 'Hábitos completados', 
-                                        angle: -90, 
-                                        position: 'insideLeft', 
-                                        fill: '#94a3b8',
-                                        dy: 50
-                                    }}
-                                />
+                                    <YAxis 
+                                        tick={{ fill: '#94a3b8', fontSize: 12 }}
+                                        stroke="#94a3b8"
+                                        allowDecimals={false}
+                                        label={{ 
+                                            value: 'Hábitos completados', 
+                                            angle: -90, 
+                                            position: 'insideLeft', 
+                                            fill: '#94a3b8',
+                                            dy: 50
+                                        }}
+                                    />
 
-                                <Tooltip 
-                                    contentStyle={{
-                                        backgroundColor: 'rgba(23, 23, 23, 0.95)',
-                                        border: '1px solid rgba(16, 185, 129, 0.3)',
-                                        borderRadius: '0.5rem',
-                                        color: '#e2e8f0'
-                                    }}
-                                    labelStyle={{ color: '#10b981' }}
-                                    formatter={(value) => [`${value} hábitos`, 'Completados']}
-                                />
+                                    {/* ✅ Tooltip mejorado */}
+                                    <Tooltip 
+                                        contentStyle={{
+                                            backgroundColor: 'rgba(15, 23, 42, 0.98)',
+                                            border: '1px solid rgba(16, 185, 129, 0.5)',
+                                            borderRadius: '0.75rem',
+                                            padding: '12px 16px',
+                                            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.5)',
+                                        }}
+                                        labelStyle={{ 
+                                            color: '#10b981',
+                                            fontWeight: '600',
+                                            fontSize: '14px',
+                                            marginBottom: '4px',
+                                        }}
+                                        itemStyle={{
+                                            color: '#e2e8f0',
+                                            fontSize: '13px',
+                                            fontWeight: '500',
+                                        }}
+                                        formatter={(value) => {
+                                            if (value === null) return ['Sin datos aún', ''];
+                                            return [`${value} ${value === 1 ? 'hábito' : 'hábitos'}`, 'Completados'];
+                                        }}
+                                        labelFormatter={(label) => `📅 Día ${label}`}
+                                        // cursor={{ stroke: '#10b981', strokeWidth: 2, strokeDasharray: '5 5' }}
+                                    />
 
-                                <Line 
-                                    type="monotone" 
-                                    dataKey="completed" 
-                                    stroke="#10b981"
-                                    strokeWidth={3}
-                                    dot={{ fill: '#10b981', strokeWidth: 2, r: 5 }}
-                                    activeDot={{ r: 7, fill: '#34d399' }}
-                                />
-                            </LineChart>
-                        </ResponsiveContainer>
+                                    <Line 
+                                        type="monotone" 
+                                        dataKey="completed" 
+                                        stroke="#10b981"
+                                        strokeWidth={3}
+                                        dot={{ fill: '#10b981', strokeWidth: 2, r: 5 }}
+                                        activeDot={{ r: 7, fill: '#34d399' }}
+                                        connectNulls={false}
+                                    />
+                                </LineChart>
+                            </ResponsiveContainer>
+                        ) : (
+                            <div className={styles.emptyChart}>
+                                <p>📊 No hay datos para mostrar este mes</p>
+                                <p className={styles.emptyChartSubtext}>
+                                    Comenzá a completar hábitos para ver tu progreso
+                                </p>
+                            </div>
+                        )}
                     </div>
                 </div>
 
