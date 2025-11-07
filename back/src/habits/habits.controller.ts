@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, ParseUUIDPipe, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, ParseUUIDPipe, HttpCode, HttpStatus, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { HabitsService } from './habits.service';
 import { CreateHabitDto } from './dto/create-habit.dto';
@@ -36,6 +36,18 @@ export class HabitsController {
     @ApiResponse({ status: 200, description: 'Resumen de hábitos del día' })
     async getTodaySummary(@GetUser('userId') userId: string) {
         return await this.habitsService.getTodaySummary(userId);
+    }
+
+    // ✅ NUEVO ENDPOINT
+    @Get('monthly-stats')
+    @ApiOperation({ summary: 'Obtener estadísticas mensuales de completaciones' })
+    @ApiResponse({ status: 200, description: 'Datos de completaciones por día del mes actual' })
+    async getMonthlyStats(
+        @GetUser('userId') userId: string,
+        @Query('year') year?: number,
+        @Query('month') month?: number
+    ) {
+        return await this.habitsService.getMonthlyStats(userId, year, month);
     }
 
     @Get(':id')

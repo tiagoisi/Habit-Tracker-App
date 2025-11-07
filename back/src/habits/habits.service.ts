@@ -276,35 +276,148 @@ export class HabitsService {
         };
     }
 
-    async getTodaySummary(userId: string): Promise<any> {
-        const habits = await this.findAllByUser(userId); // Racha actualizada
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+   async getTodaySummary(userId: string): Promise<any> {
+    const habits = await this.findAllByUser(userId); // Racha actualizada
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-        if (habits.length === 0) {
-            return {
-                totalHabits: 0,
-                completedToday: 0,
-                pendingToday: 0,
-                completionRate: 0,
-            };
-        }
-
-        const habitIds = habits.map(h => h.id);
-
-        const completedToday = await this.habitLogRepository.count({
-            where: {
-                date: today,
-                completed: true,
-                habitId: In(habitIds),
-            },
-        });
-
+    if (habits.length === 0) {
         return {
-            totalHabits: habits.length,
-            completedToday,
-            pendingToday: habits.length - completedToday,
-            completionRate: habits.length > 0 ? Math.round((completedToday / habits.length) * 100) : 0,
+            totalHabits: 0,
+            completedToday: 0,
+            pendingToday: 0,
+            completionRate: 0,
+            monthlyCompletionRate: 0, // ✅ Nueva métrica
         };
     }
+
+    const habitIds = habits.map(h => h.id);
+
+    // Completados HOY
+    const completedToday = await this.habitLogRepository.count({
+        where: {
+            date: today,
+            completed: true,
+            habitId: In(habitIds),
+        },
+    });
+
+    // ✅ NUEVO: Calcular tasa de completación del mes hasta hoy
+    const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    firstDayOfMonth.setHours(0, 0, 0, 0);
+
+    // Días transcurridos del mes (incluyendo hoy)
+    const daysElapsed = today.getDate();
+
+    // Total de completaciones posibles: hábitos × días transcurridos
+    const possibleCompletions = habits.length * daysElapsed;
+
+    // Total de completaciones reales del mes
+    const monthlyCompletions = await this.habitLogRepository.count({
+        where: {
+            date: Between(firstDayOfMonth, today),
+            completed: true,
+            habitId: In(habitIds),
+        },
+    });
+
+    const monthlyCompletionRate = possibleCompletions > 0 
+        ? Math.round((monthlyCompletions / possibleCompletions) * 100) 
+        : 0;
+
+    return {
+        totalHabits: habits.length,
+        completedToday,
+        pendingToday: habits.length - completedToday,
+        completionRate: habits.length > 0 ? Math.round((completedToday / habits.length) * 100) : 0, // Tasa del día
+        monthlyCompletionRate, // ✅ Tasa del mes
+        daysElapsed,
+        monthlyCompletions,
+        possibleCompletions,
+    };
+}
+
+     // ✅ NUEVO MÉTODO
+    async getMonthlyStats(userId: string, year?: number, month?: number): Promise<any> {
+    // Usar fecha actual si no se especifica
+    const now = new Date();
+    const targetYear = year || now.getFullYear();
+    const targetMonth = month !== undefined ? month : now.getMonth(); // 0-11
+
+    // Primer día del mes
+    const startDate = new Date(targetYear, targetMonth, 1);
+    startDate.setHours(0, 0, 0, 0);
+
+    // Último día del mes
+    const endDate = new Date(targetYear, targetMonth + 1, 0);
+    endDate.setHours(23, 59, 59, 999);
+
+    // Obtener todos los hábitos del usuario
+    const habits = await this.habitRepository.find({
+        where: { userId, isActive: true },
+        select: ['id']
+    });
+
+    if (habits.length === 0) {
+        return {
+            year: targetYear,
+            month: targetMonth + 1,
+            data: []
+        };
+    }
+
+    const habitIds = habits.map(h => h.id);
+
+    // Obtener todos los logs del mes
+    const logs = await this.habitLogRepository
+        .createQueryBuilder('log')
+        .select('DATE(log.date) as date')
+        .addSelect('COUNT(DISTINCT log.habitId) as completed')
+        .where('log.habitId IN (:...habitIds)', { habitIds })
+        .andWhere('log.date >= :startDate', { startDate })
+        .andWhere('log.date <= :endDate', { endDate })
+        .andWhere('log.completed = :completed', { completed: true })
+        .groupBy('DATE(log.date)')
+        .orderBy('date', 'ASC')
+        .getRawMany();
+
+    // Crear un mapa de fechas con completaciones
+    const completionsMap = new Map();
+    logs.forEach(log => {
+        const date = new Date(log.date);
+        const day = date.getDate();
+        completionsMap.set(day, parseInt(log.completed));
+    });
+
+    // ✅ Determinar hasta qué día mostrar datos
+    const today = new Date();
+    const isCurrentMonth = targetYear === today.getFullYear() && targetMonth === today.getMonth();
+    const currentDay = isCurrentMonth ? today.getDate() : endDate.getDate();
+
+    // Generar array con todos los días del mes
+    const daysInMonth = endDate.getDate();
+    interface DayData {
+        day: number;
+        completed: number | null;
+        label: string;
+    }
+    const data: DayData[] = [];
+
+    for (let day = 1; day <= daysInMonth; day++) {
+        // ✅ Solo incluir "completed" si es un día pasado o actual
+        data.push({
+            day,
+            completed: day <= currentDay ? (completionsMap.get(day) || 0) : null, // null para días futuros
+            label: `Día ${day}`
+        });
+    }
+
+    return {
+        year: targetYear,
+        month: targetMonth + 1,
+        totalHabits: habits.length,
+        currentDay: isCurrentMonth ? currentDay : null, // Info adicional
+        data
+    };
+}
 }
