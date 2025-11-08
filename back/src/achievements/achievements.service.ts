@@ -183,6 +183,7 @@ export class AchievementsService {
     }
 
     // Obtener progreso de logros
+    // ✅ MODIFICAR: Obtener progreso de logros CON estadísticas del usuario
     async getProgress(userId: string): Promise<any> {
         await this.initializeAchievements(userId);
         
@@ -190,21 +191,58 @@ export class AchievementsService {
         const unlocked = achievements.filter(a => a.isUnlocked).length;
         const total = achievements.length;
 
+        // ✅ Obtener estadísticas reales del usuario
+        const userHabits = await this.habitRepository.find({
+            where: { userId },
+            select: ['totalCompletions', 'longestStreak', 'currentStreak']
+        });
+
+        const totalUserCompletions = userHabits.reduce((sum, habit) => sum + habit.totalCompletions, 0);
+        const maxUserStreak = Math.max(...userHabits.map(h => h.longestStreak), 0);
+        const currentStreak = Math.max(...userHabits.map(h => h.currentStreak), 0);
+
         return {
             unlocked,
             total,
             percentage: Math.round((unlocked / total) * 100),
-            achievements: achievements.map(a => ({
-                id: a.id,
-                title: a.title,
-                description: a.description,
-                icon: a.icon,
-                type: a.type,
-                requiredCount: a.requiredCount,
-                pointsReward: a.pointsReward,
-                isUnlocked: a.isUnlocked,
-                unlockedAt: a.unlockedAt,
-            })),
+            // ✅ Agregar estadísticas del usuario
+            userStats: {
+                totalCompletions: totalUserCompletions,
+                maxStreak: maxUserStreak,
+                currentStreak: currentStreak,
+            },
+            achievements: achievements.map(a => {
+                // ✅ Calcular progreso actual para cada logro
+                let currentProgress = 0;
+                
+                if (!a.isUnlocked) {
+                    switch (a.type) {
+                        case AchievementType.STREAK:
+                            currentProgress = maxUserStreak;
+                            break;
+                        case AchievementType.TOTAL_HABITS:
+                        case AchievementType.FIRST_HABIT:
+                            currentProgress = totalUserCompletions;
+                            break;
+                    }
+                }
+
+                return {
+                    id: a.id,
+                    title: a.title,
+                    description: a.description,
+                    icon: a.icon,
+                    type: a.type,
+                    requiredCount: a.requiredCount,
+                    pointsReward: a.pointsReward,
+                    isUnlocked: a.isUnlocked,
+                    unlockedAt: a.unlockedAt,
+                    currentProgress: currentProgress, // ✅ Progreso actual
+                    progressPercentage: a.requiredCount > 0 
+                        ? Math.min(Math.round((currentProgress / a.requiredCount) * 100), 100)
+                        : 0,
+                };
+            }),
         };
     }
 }
