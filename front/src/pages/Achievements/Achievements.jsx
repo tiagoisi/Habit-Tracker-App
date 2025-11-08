@@ -124,7 +124,7 @@ const Achievements = () => {
                     </section>
                 )}
 
-                {/* Logros bloqueados */}
+                {/* ✅ Logros bloqueados CON PROGRESO */}
                 {lockedAchievements.length > 0 && (
                     <section className={styles.section}>
                         <h2 className={styles.sectionTitle}>🔒 Por desbloquear</h2>
@@ -144,12 +144,26 @@ const Achievements = () => {
                                         <p className={styles.achievementDescription}>
                                             {achievement.description}
                                         </p>
+                                        
+                                        {/* ✅ BARRA DE PROGRESO */}
+                                        <div className={styles.achievementProgress}>
+                                            <div className={styles.progressBarSmall}>
+                                                <div 
+                                                    className={styles.progressBarFill}
+                                                    style={{ width: `${achievement.progressPercentage}%` }}
+                                                />
+                                            </div>
+                                            <span className={styles.progressText}>
+                                                {achievement.currentProgress}/{achievement.requiredCount}
+                                            </span>
+                                        </div>
+
                                         <div className={styles.achievementFooter}>
                                             <span className={styles.achievementPoints}>
                                                 +{achievement.pointsReward} pts
                                             </span>
                                             <span className={styles.achievementRequirement}>
-                                                {achievement.requiredCount} requeridos
+                                                {achievement.progressPercentage}% completado
                                             </span>
                                         </div>
                                     </div>
