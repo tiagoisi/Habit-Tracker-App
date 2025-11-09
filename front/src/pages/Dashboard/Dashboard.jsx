@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@contexts/AuthContext';
 import { habitService } from '@services/habitService';
@@ -16,6 +16,11 @@ const Dashboard = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingHabit, setEditingHabit] = useState(null);
 
+    // ✅ Estados para filtros y búsqueda
+    const [filter, setFilter] = useState('all'); // 'all', 'completed', 'pending'
+    const [sortBy, setSortBy] = useState('name'); // 'name', 'streak', 'recent'
+    const [searchTerm, setSearchTerm] = useState('');
+
     useEffect(() => {
         loadData();
     }, []);
@@ -26,17 +31,59 @@ const Dashboard = () => {
             const [habitsData, summaryData, monthlyStats] = await Promise.all([
                 habitService.getAll(),
                 habitService.getTodaySummary(),
-                habitService.getMonthlyStats(), // ✅ Obtener datos reales
+                habitService.getMonthlyStats(),
             ]);
             setHabits(habitsData);
             setSummary(summaryData);
-            setMonthlyData(monthlyStats.data || []); // ✅ Usar datos del backend
+            setMonthlyData(monthlyStats.data || []);
         } catch (error) {
             console.error('Error al cargar datos:', error);
         } finally {
             setLoading(false);
         }
     };
+
+    // ✅ Filtrado, búsqueda y ordenamiento con useMemo
+    const filteredAndSortedHabits = useMemo(() => {
+        let result = [...habits];
+
+        // 1. Aplicar búsqueda
+        if (searchTerm.trim()) {
+            result = result.filter(habit => 
+                habit.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (habit.description && habit.description.toLowerCase().includes(searchTerm.toLowerCase()))
+            );
+        }
+
+        // 2. Aplicar filtro
+        switch (filter) {
+            case 'completed':
+                result = result.filter(h => h.completedToday);
+                break;
+            case 'pending':
+                result = result.filter(h => !h.completedToday);
+                break;
+            default:
+                // 'all' - no filtrar
+                break;
+        }
+
+        // 3. Aplicar ordenamiento
+        switch (sortBy) {
+            case 'streak':
+                result.sort((a, b) => b.currentStreak - a.currentStreak);
+                break;
+            case 'recent':
+                result.sort((a, b) => new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt));
+                break;
+            case 'name':
+            default:
+                result.sort((a, b) => a.title.localeCompare(b.title));
+                break;
+        }
+
+        return result;
+    }, [habits, filter, sortBy, searchTerm]);
 
     const handleSaveHabit = async (habitData) => {
         try {
@@ -145,37 +192,35 @@ const Dashboard = () => {
                 </div>
 
                 {summary && (
-                <div className={styles.stats}>
-                    <div className={styles.statCard}>
-                        <div className={styles.statIcon}>🎯</div>
-                        <div className={styles.statInfo}>
-                            <p className={styles.statValue}>{summary.totalHabits}</p>
-                            <p className={styles.statLabel}>Hábitos activos</p>
+                    <div className={styles.stats}>
+                        <div className={styles.statCard}>
+                            <div className={styles.statIcon}>🎯</div>
+                            <div className={styles.statInfo}>
+                                <p className={styles.statValue}>{summary.totalHabits}</p>
+                                <p className={styles.statLabel}>Hábitos activos</p>
+                            </div>
                         </div>
-                    </div>
 
-                    <div className={styles.statCard}>
-                        <div className={styles.statIcon}>✅</div>
-                        <div className={styles.statInfo}>
-                            <p className={styles.statValue}>{summary.completedToday}</p>
-                            <p className={styles.statLabel}>Completados hoy</p>
+                        <div className={styles.statCard}>
+                            <div className={styles.statIcon}>✅</div>
+                            <div className={styles.statInfo}>
+                                <p className={styles.statValue}>{summary.completedToday}</p>
+                                <p className={styles.statLabel}>Completados hoy</p>
+                            </div>
                         </div>
-                    </div>
 
-                    <div className={styles.statCard}>
-                        <div className={styles.statIcon}>📊</div>
-                        <div className={styles.statInfo}>
-                            {/* ✅ CAMBIO: Usar monthlyCompletionRate en vez de completionRate */}
-                            <p className={styles.statValue}>{summary.monthlyCompletionRate}%</p>
-                            <p className={styles.statLabel}>Tasa de completación</p>
-                             {/* ✅ Info adicional */}
-                            <p className={styles.statSubtext}>
-                                {summary.monthlyCompletions} de {summary.possibleCompletions} este mes
-                            </p>
+                        <div className={styles.statCard}>
+                            <div className={styles.statIcon}>📊</div>
+                            <div className={styles.statInfo}>
+                                <p className={styles.statValue}>{summary.monthlyCompletionRate}%</p>
+                                <p className={styles.statLabel}>Tasa de completación</p>
+                                <p className={styles.statSubtext}>
+                                    {summary.monthlyCompletions} de {summary.possibleCompletions} este mes
+                                </p>
+                            </div>
                         </div>
                     </div>
-                </div>
-                 )}
+                )}
 
                 {/* Gráfico de progreso mensual */}
                 <div className={styles.chartSection}>
@@ -206,7 +251,6 @@ const Dashboard = () => {
                                         }}
                                     />
 
-                                    {/* ✅ Tooltip mejorado */}
                                     <Tooltip 
                                         contentStyle={{
                                             backgroundColor: 'rgba(15, 23, 42, 0.98)',
@@ -231,7 +275,6 @@ const Dashboard = () => {
                                             return [`${value} ${value === 1 ? 'hábito' : 'hábitos'}`, 'Completados'];
                                         }}
                                         labelFormatter={(label) => `📅 Día ${label}`}
-                                        // cursor={{ stroke: '#10b981', strokeWidth: 2, strokeDasharray: '5 5' }}
                                     />
 
                                     <Line 
@@ -278,18 +321,116 @@ const Dashboard = () => {
                             </button>
                         </div>
                     ) : (
-                        <div className={styles.habitsList}>
-                            {habits.map((habit) => (
-                                <HabitCard
-                                    key={habit.id}
-                                    habit={habit}
-                                    onComplete={handleComplete}
-                                    onUncomplete={handleUncomplete}
-                                    onEdit={handleEdit}
-                                    onDelete={handleDelete}
-                                />
-                            ))}
-                        </div>
+                        <>
+                            {/* ✅ Barra de filtros y búsqueda */}
+                            <div className={styles.filtersBar}>
+                                {/* Búsqueda */}
+                                <div className={styles.searchBox}>
+                                    <span className={styles.searchIcon}>🔍</span>
+                                    <input
+                                        type="text"
+                                        placeholder="Buscar hábitos..."
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        className={styles.searchInput}
+                                    />
+                                    {searchTerm && (
+                                        <button
+                                            onClick={() => setSearchTerm('')}
+                                            className={styles.clearSearch}
+                                        >
+                                            ✕
+                                        </button>
+                                    )}
+                                </div>
+
+                                {/* Filtros */}
+                                <div className={styles.filterButtons}>
+                                    <button
+                                        onClick={() => setFilter('all')}
+                                        className={`${styles.filterBtn} ${filter === 'all' ? styles.active : ''}`}
+                                    >
+                                        Todos ({habits.length})
+                                    </button>
+                                    <button
+                                        onClick={() => setFilter('completed')}
+                                        className={`${styles.filterBtn} ${filter === 'completed' ? styles.active : ''}`}
+                                    >
+                                        ✓ Completados ({habits.filter(h => h.completedToday).length})
+                                    </button>
+                                    <button
+                                        onClick={() => setFilter('pending')}
+                                        className={`${styles.filterBtn} ${filter === 'pending' ? styles.active : ''}`}
+                                    >
+                                        ○ Pendientes ({habits.filter(h => !h.completedToday).length})
+                                    </button>
+                                </div>
+
+                                {/* Ordenamiento */}
+                                <div className={styles.sortBox}>
+                                    <label className={styles.sortLabel}>Ordenar:</label>
+                                    <select
+                                        value={sortBy}
+                                        onChange={(e) => setSortBy(e.target.value)}
+                                        className={styles.sortSelect}
+                                    >
+                                        <option value="name">Nombre A-Z</option>
+                                        <option value="streak">Mayor racha</option>
+                                        <option value="recent">Más reciente</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            {/* Contador de resultados */}
+                            {(searchTerm || filter !== 'all') && (
+                                <div className={styles.resultsInfo}>
+                                    Mostrando {filteredAndSortedHabits.length} de {habits.length} hábitos
+                                    {searchTerm && (
+                                        <button
+                                            onClick={() => {
+                                                setSearchTerm('');
+                                                setFilter('all');
+                                            }}
+                                            className={styles.clearFilters}
+                                        >
+                                            Limpiar filtros
+                                        </button>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Lista de hábitos filtrados */}
+                            {filteredAndSortedHabits.length === 0 ? (
+                                <div className={styles.noResults}>
+                                    <div className={styles.noResultsIcon}>🔍</div>
+                                    <p className={styles.noResultsText}>
+                                        No se encontraron hábitos
+                                    </p>
+                                    <button
+                                        onClick={() => {
+                                            setSearchTerm('');
+                                            setFilter('all');
+                                        }}
+                                        className={styles.resetFiltersBtn}
+                                    >
+                                        Ver todos los hábitos
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className={styles.habitsList}>
+                                    {filteredAndSortedHabits.map((habit) => (
+                                        <HabitCard
+                                            key={habit.id}
+                                            habit={habit}
+                                            onComplete={handleComplete}
+                                            onUncomplete={handleUncomplete}
+                                            onEdit={handleEdit}
+                                            onDelete={handleDelete}
+                                        />
+                                    ))}
+                                </div>
+                            )}
+                        </>
                     )}
                 </div>
             </main>
