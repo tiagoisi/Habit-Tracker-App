@@ -6,6 +6,7 @@ import HabitCard from '@components/HabitCard/HabitCard';
 import HabitModal from '@components/HabitModal/HabitModal';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import styles from './Dashboard.module.css';
+import toast from 'react-hot-toast';
 
 const Dashboard = () => {
     const { user, logout } = useAuth();
@@ -38,6 +39,7 @@ const Dashboard = () => {
             setMonthlyData(monthlyStats.data || []);
         } catch (error) {
             console.error('Error al cargar datos:', error);
+            toast.error('Error al cargar los datos');
         } finally {
             setLoading(false);
         }
@@ -102,14 +104,17 @@ const Dashboard = () => {
         try {
             if (editingHabit) {
                 await habitService.update(editingHabit.id, habitData);
+                toast.success('Hábito actualizado correctamente');
             } else {
                 await habitService.create(habitData);
+                toast.success('Hábito creado con exito!🎉')
             }
             await loadData();
             setIsModalOpen(false);
             setEditingHabit(null);
         } catch (error) {
             console.error('Error al guardar hábito:', error);
+            toast.error('Error al guardar el hábito :(');
             throw error;
         }
     };
@@ -122,6 +127,24 @@ const Dashboard = () => {
             const result = await habitService.complete(habitId);
             await loadData();
             
+             // ✅ Toast de éxito con puntos ganados
+            toast.success('¡Hábito completado! +10 pts 🎯', {
+                icon: '✅',
+            });
+
+            // ✅ Si hay logros nuevos, mostrar toast especial
+            if (result.newAchievements && result.newAchievements.length > 0) {
+                result.newAchievements.forEach((achievement) => {
+                    toast.success(
+                        `¡Logro desbloqueado! ${achievement.icon} ${achievement.title} (+${achievement.pointsReward} pts)`,
+                        {
+                            duration: 5000,
+                            icon: '🏆',
+                        }
+                    );
+                });
+            }
+
             // ✅ Restaurar posición después de recargar
             setTimeout(() => {
                 window.scrollTo(0, scrollPosition);
@@ -130,6 +153,8 @@ const Dashboard = () => {
             return result;
         } catch (error) {
             console.error('Error al completar hábito:', error);
+            // ✅ Toast de error
+            toast.error(error.response?.data?.message || 'Error al completar el hábito');
             throw error;
         }
     };
@@ -141,6 +166,10 @@ const Dashboard = () => {
             
             await habitService.uncomplete(habitId);
             await loadData();
+
+            toast('Hábito desmarcado', {
+                icon: ':('
+            });
             
             // ✅ Restaurar posición después de recargar
             setTimeout(() => {
@@ -148,6 +177,7 @@ const Dashboard = () => {
             }, 0);
         } catch (error) {
             console.error('Error al desmarcar hábito:', error);
+            toast.error('Error al desmarcar el hábito :(');
             throw error;
         }
     };
@@ -162,8 +192,10 @@ const Dashboard = () => {
             try {
                 await habitService.delete(habitId);
                 await loadData();
+                toast.success('Hábito eliminado correctamente');
             } catch (error) {
                 console.error('Error al eliminar hábito:', error);
+                toast.error('Error al eliminar el hábito :(');
             }
         }
     };

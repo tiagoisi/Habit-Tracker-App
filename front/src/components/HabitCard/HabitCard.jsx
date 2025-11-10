@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import confetti from 'canvas-confetti';
 import styles from './HabitCard.module.css';
 
 const HabitCard = ({ habit, onComplete, onUncomplete, onEdit, onDelete }) => {
@@ -11,52 +10,6 @@ const HabitCard = ({ habit, onComplete, onUncomplete, onEdit, onDelete }) => {
         setIsCompleted(habit.completedToday || false);
     }, [habit.completedToday]);
 
-    // ✅ Función para lanzar confetti
-    const launchConfetti = () => {
-        const count = 200;
-        const defaults = {
-            origin: { y: 0.7 },
-            zIndex: 9999,
-        };
-
-        function fire(particleRatio, opts) {
-            confetti({
-                ...defaults,
-                ...opts,
-                particleCount: Math.floor(count * particleRatio),
-            });
-        }
-
-        // Explosión con múltiples ángulos y colores
-        fire(0.25, {
-            spread: 26,
-            startVelocity: 55,
-            colors: ['#10b981', '#34d399', '#6ee7b7'],
-        });
-        fire(0.2, {
-            spread: 60,
-            colors: ['#10b981', '#059669', '#047857'],
-        });
-        fire(0.35, {
-            spread: 100,
-            decay: 0.91,
-            scalar: 0.8,
-            colors: ['#34d399', '#6ee7b7', '#a7f3d0'],
-        });
-        fire(0.1, {
-            spread: 120,
-            startVelocity: 25,
-            decay: 0.92,
-            scalar: 1.2,
-            colors: ['#10b981', '#10b981'],
-        });
-        fire(0.1, {
-            spread: 120,
-            startVelocity: 45,
-            colors: ['#34d399', '#6ee7b7'],
-        });
-    };
-
     const handleToggleComplete = async () => {
         setLoading(true);
         try {
@@ -64,17 +17,8 @@ const HabitCard = ({ habit, onComplete, onUncomplete, onEdit, onDelete }) => {
                 await onUncomplete(habit.id);
                 setIsCompleted(false);
             } else {
-                const result = await onComplete(habit.id);
+                await onComplete(habit.id);
                 setIsCompleted(true);
-                
-                // ✅ Lanzar confetti al completar
-                launchConfetti();
-                
-                // Mostrar logros desbloqueados si los hay
-                if (result.newAchievements && result.newAchievements.length > 0) {
-                    // TODO: Mostrar modal de logros desbloqueados
-                    console.log('¡Nuevos logros!', result.newAchievements);
-                }
             }
         } catch (error) {
             console.error('Error al marcar hábito:', error);
