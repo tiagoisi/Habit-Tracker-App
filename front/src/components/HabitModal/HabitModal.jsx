@@ -7,7 +7,7 @@ const FREQUENCIES = [
     { value: 'custom', label: 'Personalizado' },
 ];
 
-const ICONS = ['💪', '📚', '🏃', '🧘', '💧', '🥗', '😴', '🎯', '✍️', '🎨', '🎵', '🧠'];
+const ICONS = ['💪', '📚', '🏃', '🧘', '💧', '🥗', '😴', '🎯', '✍️', '🎨', '💻', '🧠'];
 const COLORS = ['#3b82f6', '#10b981', '#f97316', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f59e0b'];
 
 const HabitModal = ({ isOpen, onClose, onSave, habit = null }) => {

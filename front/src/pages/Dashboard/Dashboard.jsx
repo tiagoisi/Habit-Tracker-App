@@ -85,6 +85,19 @@ const Dashboard = () => {
         return result;
     }, [habits, filter, sortBy, searchTerm]);
 
+    // ✅ Cálculo del máximo de hábitos para el eje Y (Paso 1)
+    const maxActiveHabits = useMemo(() => {
+        // Usamos el total de hábitos del resumen. Si no está disponible, usamos el length.
+        const max = summary?.totalHabits ?? habits.length;
+        
+        // El máximo de la data mensual puede ser diferente al total de hábitos (si la API tiene un error)
+        // Por seguridad, encontramos el máximo de hábitos completados en la data mensual.
+        const maxCompletedInMonth = monthlyData.reduce((max, item) => Math.max(max, item.completed ?? 0), 0);
+        
+        // Usamos el mayor de los dos (Total de Hábitos vs Máximo completado en la data) para asegurar que el gráfico contenga la línea.
+        return Math.max(max, maxCompletedInMonth, 1); 
+    }, [summary, habits, monthlyData]);
+
     const handleSaveHabit = async (habitData) => {
         try {
             if (editingHabit) {
@@ -103,8 +116,17 @@ const Dashboard = () => {
 
     const handleComplete = async (habitId) => {
         try {
+            // ✅ Guardar posición actual del scroll
+            const scrollPosition = window.scrollY;
+            
             const result = await habitService.complete(habitId);
             await loadData();
+            
+            // ✅ Restaurar posición después de recargar
+            setTimeout(() => {
+                window.scrollTo(0, scrollPosition);
+            }, 0);
+            
             return result;
         } catch (error) {
             console.error('Error al completar hábito:', error);
@@ -114,8 +136,16 @@ const Dashboard = () => {
 
     const handleUncomplete = async (habitId) => {
         try {
+            // ✅ Guardar posición actual del scroll
+            const scrollPosition = window.scrollY;
+            
             await habitService.uncomplete(habitId);
             await loadData();
+            
+            // ✅ Restaurar posición después de recargar
+            setTimeout(() => {
+                window.scrollTo(0, scrollPosition);
+            }, 0);
         } catch (error) {
             console.error('Error al desmarcar hábito:', error);
             throw error;
@@ -150,6 +180,12 @@ const Dashboard = () => {
             </div>
         );
     }
+
+    // obtener el nombre del mes
+    const getCurrentMonthName = () => {
+        const monthName = new Date().toLocaleDateString('es-AR', { month: 'long' });
+        return monthName.charAt(0).toUpperCase() + monthName.slice(1);
+    };
 
     return (
         <div className={styles.container}>
@@ -224,7 +260,7 @@ const Dashboard = () => {
 
                 {/* Gráfico de progreso mensual */}
                 <div className={styles.chartSection}>
-                    <h3 className={styles.chartTitle}>Progreso del Mes</h3>
+                    <h3 className={styles.chartTitle}>Progreso de {getCurrentMonthName()}</h3>
                     <div className={styles.chartContainer}>
                         {monthlyData.length > 0 ? (
                             <ResponsiveContainer width="100%" height={300}>
@@ -238,7 +274,9 @@ const Dashboard = () => {
                                         label={{ value: 'Día del mes', position: 'insideBottom', offset: -5, fill: '#94a3b8' }}
                                     />
 
-                                    <YAxis 
+                                    <YAxis
+                                        tickCount={maxActiveHabits + 1} // <-- Uso del valor dinámico
+                                        domain={[0, maxActiveHabits]} // <-- Esto ayuda a que el gráfico tenga el rango correcto
                                         tick={{ fill: '#94a3b8', fontSize: 12 }}
                                         stroke="#94a3b8"
                                         allowDecimals={false}
