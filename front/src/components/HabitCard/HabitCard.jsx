@@ -27,8 +27,30 @@ const HabitCard = ({ habit, onComplete, onUncomplete, onEdit, onDelete }) => {
         }
     };
 
+    // ✅ NUEVA LÓGICA: Indicador de Tendencia Mensual
+    const monthlyRate = habit.monthlyHabitRate; // 0-100
+    let trendColor = '#94a3b8'; // Gris por defecto (o si no aplica)
+    let trendIcon = '—';
+    let trendTooltip = 'Tasa Mensual: No aplica';
+
+    if (habit.frequency === 'daily' && monthlyRate !== undefined) {
+        if (monthlyRate >= 70) {
+            trendColor = '#10b981'; // Verde (Alto rendimiento)
+            trendIcon = '▲';
+            trendTooltip = `Tasa Mensual: ${monthlyRate}% (Excelente)`;
+        } else if (monthlyRate >= 50) {
+            trendColor = '#f59e0b'; // Amarillo (Rendimiento aceptable)
+            trendIcon = '—';
+            trendTooltip = `Tasa Mensual: ${monthlyRate}% (Medio)`;
+        } else {
+            trendColor = '#ef4444'; // Rojo (Bajo rendimiento)
+            trendIcon = '▼';
+            trendTooltip = `Tasa Mensual: ${monthlyRate}% (Bajo)`;
+        }
+    }
+
     return (
-        <div className={styles.card} style={{ borderLeft: `4px solid ${habit.color || '#3b82f6'}` }}>
+       <div className={styles.card} style={{ borderLeft: `4px solid ${habit.color || '#3b82f6'}` }}>
             <div className={styles.content}>
                 <div className={styles.iconSection}>
                     <span className={styles.icon}>{habit.icon || '📝'}</span>
@@ -41,8 +63,21 @@ const HabitCard = ({ habit, onComplete, onUncomplete, onEdit, onDelete }) => {
                     )}
                     
                     <div className={styles.stats}>
+                        {/* Indicador de Racha Actual */}
                         <span className={styles.stat}>
-                            🔥 {habit.currentStreak} días
+                            🔥 Racha: {habit.currentStreak} días
+                        </span>
+                        {/* Indicador de Tendencia Mensual */}
+                        <span 
+                            className={styles.stat} 
+                            style={{ 
+                                color: trendColor, 
+                                borderColor: trendColor, 
+                                background: trendColor + '10' // Color con 10% de opacidad
+                            }}
+                            title={trendTooltip}
+                        >
+                            {trendIcon} {monthlyRate}% {habit.frequency === 'daily' ? '' : ''}
                         </span>
                         <span className={styles.stat}>
                             🏆 Mejor: {habit.longestStreak}
