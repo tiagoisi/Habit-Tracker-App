@@ -182,8 +182,7 @@ export class AchievementsService {
         });
     }
 
-    // Obtener progreso de logros
-    // ✅ MODIFICAR: Obtener progreso de logros CON estadísticas del usuario
+    // Obtener progreso de logros con estadísticas del usuario
     async getProgress(userId: string): Promise<any> {
         await this.initializeAchievements(userId);
         

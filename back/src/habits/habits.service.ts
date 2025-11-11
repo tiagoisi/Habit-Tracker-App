@@ -8,6 +8,7 @@ import { UpdateHabitDto } from './dto/update-habit.dto';
 import { CompleteHabitDto } from './dto/complete-habit.dto';
 import { UsersService } from 'src/user/user.service';
 import { AchievementsService } from '../achievements/achievements.service';
+import { HabitFrequency } from './entities/habit.entity';
 
 @Injectable()
 export class HabitsService {
@@ -30,41 +31,47 @@ export class HabitsService {
     }
 
     // Traigo habitos del usuario y calculo racha
-    async findAllByUser(userId: string): Promise<any[]> {
-        const habits = await this.habitRepository.find({
-            where: { userId, isActive: true },
-            order: { createdAt: 'DESC' },
-        });
+   // Modificamos findAllByUser
+async findAllByUser(userId: string): Promise<any[]> {
+    const habits = await this.habitRepository.find({
+        // ... (código existente)
+    });
 
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-        const habitsWithStreaksAndStatus = await Promise.all(
-            habits.map(async (habit) => {
-                
-                await this.updateHabitStats(habit);
+    const habitsWithStreaksAndStatus = await Promise.all(
+        habits.map(async (habit) => {
+            
+            // 1. Actualiza las estadísticas del hábito
+            const updatedStats = await this.updateHabitStats(habit); 
 
-                const updatedHabit = await this.habitRepository.findOne({ where: { id: habit.id } });
-                
-                if (!updatedHabit) return habit; // Fallback si no se encuentra
+            // 2. ✅ Calcular la tasa mensual específica del Hábito
+            const monthlyHabitRate = await this.calculateMonthlyHabitRate(habit);
+            
+            // 3. Buscar si el hábito fue completado hoy
+            const logToday = await this.habitLogRepository.findOne({
+                where: {
+                    habitId: habit.id,
+                    date: today,
+                    completed: true,
+                },
+            });
 
-                const logToday = await this.habitLogRepository.findOne({
-                    where: {
-                        habitId: updatedHabit.id,
-                        date: today,
-                        completed: true,
-                    },
-                });
+            return {
+                ...habit, 
+                currentStreak: updatedStats.currentStreak,
+                longestStreak: updatedStats.longestStreak,
+                totalCompletions: updatedStats.totalCompletions,
+                completedToday: !!logToday,
+                // ✅ NUEVA PROPIEDAD
+                monthlyHabitRate: monthlyHabitRate, 
+            };
+        })
+    );
 
-                return {
-                    ...updatedHabit, 
-                    completedToday: !!logToday,
-                };
-            })
-        );
-
-        return habitsWithStreaksAndStatus;
-    }
+    return habitsWithStreaksAndStatus;
+}
 
     async findOne(id: string, userId: string): Promise<Habit> {
         const habit = await this.habitRepository.findOne({
@@ -178,7 +185,7 @@ export class HabitsService {
     }
 
     // Calculo streak y totalCompletions.
-    private async updateHabitStats(habit: Habit): Promise<void> {
+    private async updateHabitStats(habit: Habit): Promise<{ currentStreak: number; longestStreak: number; totalCompletions: number }> {
         const logs = await this.habitLogRepository.find({
             where: { habitId: habit.id, completed: true },
             order: { date: 'DESC' },
@@ -244,6 +251,12 @@ export class HabitsService {
             currentStreak,
             longestStreak,
         });
+
+        return {
+            currentStreak,
+            longestStreak,
+            totalCompletions,
+        };
     }
 
     async getHabitProgress(id: string, userId: string): Promise<any> {
@@ -419,5 +432,41 @@ export class HabitsService {
         currentDay: isCurrentMonth ? currentDay : null, // Info adicional
         data
     };
+    }
+    
+    private async calculateMonthlyHabitRate(habit: Habit): Promise<number> {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    today.setHours(0, 0, 0, 0);
+
+    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    firstDayOfMonth.setHours(0, 0, 0, 0);
+
+    // Días transcurridos del mes (incluyendo hoy)
+    const daysElapsed = today.getDate(); 
+
+    // Solo calcular para hábitos diarios por simplicidad en la tarjeta
+    if (habit.frequency !== HabitFrequency.DAILY) {
+        return 0; 
+    }
+
+    // Completaciones reales del hábito en el mes
+    const monthlyCompletions = await this.habitLogRepository.count({
+        where: {
+            habitId: habit.id,
+            date: Between(firstDayOfMonth, today),
+            completed: true,
+        },
+    });
+
+    // Completaciones posibles (hábitos diarios): días transcurridos
+    const possibleCompletions = daysElapsed;
+
+    const monthlyRate = possibleCompletions > 0 
+        ? Math.round((monthlyCompletions / possibleCompletions) * 100) 
+        : 0;
+        
+    return monthlyRate; // Devuelve el porcentaje de completación mensual del hábito (0-100)
 }
+
 }
