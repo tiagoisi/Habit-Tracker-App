@@ -32,9 +32,11 @@ export class HabitsService {
 
     // Traigo habitos del usuario y calculo racha
    // Modificamos findAllByUser
+// ✅ MODIFICAR: findAllByUser para incluir sparkline data
 async findAllByUser(userId: string): Promise<any[]> {
     const habits = await this.habitRepository.find({
-        // ... (código existente)
+        where: { userId, isActive: true },
+        order: { createdAt: 'DESC' },
     });
 
     const today = new Date();
@@ -42,14 +44,12 @@ async findAllByUser(userId: string): Promise<any[]> {
 
     const habitsWithStreaksAndStatus = await Promise.all(
         habits.map(async (habit) => {
-            
-            // 1. Actualiza las estadísticas del hábito
-            const updatedStats = await this.updateHabitStats(habit); 
-
-            // 2. ✅ Calcular la tasa mensual específica del Hábito
+            const updatedStats = await this.updateHabitStats(habit);
             const monthlyHabitRate = await this.calculateMonthlyHabitRate(habit);
             
-            // 3. Buscar si el hábito fue completado hoy
+            // ✅ Obtener datos para sparkline
+            const sparklineData = await this.getHabitSparklineData(habit.id);
+            
             const logToday = await this.habitLogRepository.findOne({
                 where: {
                     habitId: habit.id,
@@ -64,8 +64,8 @@ async findAllByUser(userId: string): Promise<any[]> {
                 longestStreak: updatedStats.longestStreak,
                 totalCompletions: updatedStats.totalCompletions,
                 completedToday: !!logToday,
-                // ✅ NUEVA PROPIEDAD
-                monthlyHabitRate: monthlyHabitRate, 
+                monthlyHabitRate: monthlyHabitRate,
+                sparklineData: sparklineData, // ✅ NUEVO
             };
         })
     );
@@ -467,6 +467,47 @@ async findAllByUser(userId: string): Promise<any[]> {
         : 0;
         
     return monthlyRate; // Devuelve el porcentaje de completación mensual del hábito (0-100)
+}
+
+// ✅ CORREGIR: Obtener sparkline data (últimos 14 días)
+private async getHabitSparklineData(habitId: string): Promise<number[]> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const fourteenDaysAgo = new Date(today);
+    fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 13); // 14 días incluyendo hoy
+    fourteenDaysAgo.setHours(0, 0, 0, 0);
+
+    // Obtener logs de los últimos 14 días
+    const logs = await this.habitLogRepository.find({
+        where: {
+            habitId: habitId,
+            date: Between(fourteenDaysAgo, today),
+            completed: true,
+        },
+        order: { date: 'ASC' },
+    });
+
+    // Crear mapa de fechas completadas
+    const completedDates = new Set<string>();
+    logs.forEach(log => {
+        const logDate = new Date(log.date);
+        logDate.setHours(0, 0, 0, 0);
+        const dateStr = logDate.toISOString().split('T')[0];
+        completedDates.add(dateStr);
+    });
+
+    // Generar array de 14 valores (1 = completado, 0 = no completado)
+    const sparklineData: number[] = [];
+    for (let i = 0; i < 14; i++) {
+        const checkDate = new Date(fourteenDaysAgo);
+        checkDate.setDate(checkDate.getDate() + i);
+        const dateStr = checkDate.toISOString().split('T')[0];
+        
+        sparklineData.push(completedDates.has(dateStr) ? 1 : 0);
+    }
+
+    return sparklineData;
 }
 
 }
