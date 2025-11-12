@@ -7,6 +7,16 @@ import HabitModal from '@components/HabitModal/HabitModal';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import styles from './Dashboard.module.css';
 import toast from 'react-hot-toast';
+import confetti from 'canvas-confetti';
+
+// 💥 FUNCIÓN PARA DISPARAR EL CONFETI
+const runConfetti = () => {
+    confetti({
+        particleCount: 150,
+        spread: 90,
+        origin: { y: 0.6 }
+    });
+};
 
 const Dashboard = () => {
     const { user, logout } = useAuth();
@@ -123,11 +133,15 @@ const Dashboard = () => {
         try {
             // ✅ Guardar posición actual del scroll
             const scrollPosition = window.scrollY;
+
+            // 💥 LÓGICA DE CONFETI: Determinar si este es el último pendiente ANTES de completar
+            const habitsBeforeCompletion = habits; 
+            const pendingBefore = habitsBeforeCompletion.filter(h => !h.completedToday).length;
             
             const result = await habitService.complete(habitId);
-            await loadData();
+            await loadData(); // Recargar datos para el estado actualizado
             
-             // ✅ Toast de éxito con puntos ganados
+            // ✅ Toast de éxito con puntos ganados
             toast.success('¡Hábito completado! +10 pts 🎯', {
                 icon: '✅',
             });
@@ -142,6 +156,15 @@ const Dashboard = () => {
                             icon: '🏆',
                         }
                     );
+                });
+            }
+
+            // 💥 LÓGICA DE CONFETI: Si quedaba solo 1 pendiente (el que acabamos de completar), lanzamos confeti
+            if (pendingBefore === 1) { 
+                runConfetti();
+                toast.success('¡Felicitaciones! 🥳 ¡Completaste todos los hábitos del día!', { 
+                    duration: 6000, 
+                    icon: '🎉' 
                 });
             }
 

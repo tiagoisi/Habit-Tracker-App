@@ -92,7 +92,7 @@ const Login = () => {
             Swal.fire({
                     icon: "error",
                     title: "Contraseña o usuario incorrectos!",
-                    text: "Intenta de nuevo o crea una cuenta!",
+                    text: "Intenta mas tarde o crea una cuenta",
                     timer: 3000,
                     showConfirmButton: false
                 });
