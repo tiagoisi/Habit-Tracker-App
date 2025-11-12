@@ -1,14 +1,21 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import styles from './HabitCard.module.css';
 
 const HabitCard = ({ habit, onComplete, onUncomplete, onEdit, onDelete }) => {
     const [loading, setLoading] = useState(false);
     const [isCompleted, setIsCompleted] = useState(habit.completedToday || false);
+    const canvasRef = useRef(null);
 
-    // Actualizar estado cuando cambia el hábito
     useEffect(() => {
         setIsCompleted(habit.completedToday || false);
     }, [habit.completedToday]);
+
+    // ✅ Dibujar gráfico estilo Apple
+    useEffect(() => {
+        if (canvasRef.current && habit.sparklineData && habit.sparklineData.length > 0) {
+            drawSparkline();
+        }
+    }, [habit.sparklineData, habit.monthlyHabitRate]);
 
     const handleToggleComplete = async () => {
         setLoading(true);
@@ -27,30 +34,89 @@ const HabitCard = ({ habit, onComplete, onUncomplete, onEdit, onDelete }) => {
         }
     };
 
-    // ✅ NUEVA LÓGICA: Indicador de Tendencia Mensual
-    const monthlyRate = habit.monthlyHabitRate; // 0-100
-    let trendColor = '#94a3b8'; // Gris por defecto (o si no aplica)
-    let trendIcon = '—';
-    let trendTooltip = 'Tasa Mensual: No aplica';
+    // ✅ Función para dibujar el mini gráfico
+    const drawSparkline = () => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
 
-    if (habit.frequency === 'daily' && monthlyRate !== undefined) {
+        const ctx = canvas.getContext('2d');
+        const data = habit.sparklineData;
+        const width = canvas.width;
+        const height = canvas.height;
+        const padding = 2;
+
+        // Limpiar canvas
+        ctx.clearRect(0, 0, width, height);
+
+        // Determinar color según rendimiento
+        const monthlyRate = habit.monthlyHabitRate || 0;
+        let lineColor = '#64748b';
+        
         if (monthlyRate >= 70) {
-            trendColor = '#10b981'; // Verde (Alto rendimiento)
-            trendIcon = '▲';
-            trendTooltip = `Tasa Mensual: ${monthlyRate}% (Excelente)`;
+            lineColor = '#10b981'; // Verde
         } else if (monthlyRate >= 50) {
-            trendColor = '#f59e0b'; // Amarillo (Rendimiento aceptable)
-            trendIcon = '—';
-            trendTooltip = `Tasa Mensual: ${monthlyRate}% (Medio)`;
-        } else {
-            trendColor = '#ef4444'; // Rojo (Bajo rendimiento)
-            trendIcon = '▼';
-            trendTooltip = `Tasa Mensual: ${monthlyRate}% (Bajo)`;
+            lineColor = '#f59e0b'; // Amarillo
+        } else if (monthlyRate > 0) {
+            lineColor = '#ef4444'; // Rojo
         }
+
+        // Calcular puntos
+        const stepX = (width - padding * 2) / (data.length - 1);
+        const points = data.map((value, index) => ({
+            x: padding + index * stepX,
+            y: height - padding - (value * (height - padding * 2))
+        }));
+
+        // Dibujar línea suave con curvas Bezier
+        ctx.beginPath();
+        ctx.moveTo(points[0].x, points[0].y);
+
+        for (let i = 0; i < points.length - 1; i++) {
+            const current = points[i];
+            const next = points[i + 1];
+            
+            // Punto de control para curva suave
+            const controlX = (current.x + next.x) / 2;
+            
+            ctx.quadraticCurveTo(controlX, current.y, next.x, next.y);
+        }
+
+        ctx.strokeStyle = lineColor;
+        ctx.lineWidth = 2;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.stroke();
+
+        // Dibujar área bajo la línea (opcional, estilo iOS)
+        ctx.lineTo(points[points.length - 1].x, height);
+        ctx.lineTo(points[0].x, height);
+        ctx.closePath();
+        
+        const gradient = ctx.createLinearGradient(0, 0, 0, height);
+        gradient.addColorStop(0, lineColor + '40'); // 25% opacidad
+        gradient.addColorStop(1, lineColor + '00'); // 0% opacidad
+        
+        ctx.fillStyle = gradient;
+        ctx.fill();
+    };
+
+    const monthlyRate = habit.monthlyHabitRate || 0;
+    let performanceColor = '#64748b';
+    
+    if (monthlyRate >= 70) {
+        performanceColor = '#10b981';
+    } else if (monthlyRate >= 50) {
+        performanceColor = '#f59e0b';
+    } else if (monthlyRate > 0) {
+        performanceColor = '#ef4444';
     }
 
+    const hasSparklineData = habit.sparklineData && 
+                            Array.isArray(habit.sparklineData) && 
+                            habit.sparklineData.length > 0;
+
     return (
-       <div className={styles.card} style={{ borderLeft: `4px solid ${habit.color || '#3b82f6'}` }}>
+        <div className={styles.card} style={{ borderLeft: `4px solid ${habit.color || '#3b82f6'}` }}>
             <div className={styles.content}>
                 <div className={styles.iconSection}>
                     <span className={styles.icon}>{habit.icon || '📝'}</span>
@@ -63,21 +129,8 @@ const HabitCard = ({ habit, onComplete, onUncomplete, onEdit, onDelete }) => {
                     )}
                     
                     <div className={styles.stats}>
-                        {/* Indicador de Racha Actual */}
                         <span className={styles.stat}>
-                            🔥 Racha: {habit.currentStreak} días
-                        </span>
-                        {/* Indicador de Tendencia Mensual */}
-                        <span 
-                            className={styles.stat} 
-                            style={{ 
-                                color: trendColor, 
-                                borderColor: trendColor, 
-                                background: trendColor + '10' // Color con 10% de opacidad
-                            }}
-                            title={trendTooltip}
-                        >
-                            {trendIcon} {monthlyRate}% {habit.frequency === 'daily' ? '' : ''}
+                            🔥 {habit.currentStreak} días
                         </span>
                         <span className={styles.stat}>
                             🏆 Mejor: {habit.longestStreak}
@@ -86,6 +139,26 @@ const HabitCard = ({ habit, onComplete, onUncomplete, onEdit, onDelete }) => {
                             ✅ Total: {habit.totalCompletions}
                         </span>
                     </div>
+
+                    {/* ✅ Mini gráfico estilo Apple Stocks */}
+                    {hasSparklineData && (
+                        <div className={styles.sparklineContainer}>
+                            <div className={styles.sparklineWrapper}>
+                                <canvas
+                                    ref={canvasRef}
+                                    width={140}
+                                    height={32}
+                                    className={styles.sparklineCanvas}
+                                />
+                            </div>
+                            <span 
+                                className={styles.sparklineLabel}
+                                style={{ color: performanceColor }}
+                            >
+                                Últimos 14 días · {monthlyRate}%
+                            </span>
+                        </div>
+                    )}
                 </div>
 
                 <div className={styles.actions}>
