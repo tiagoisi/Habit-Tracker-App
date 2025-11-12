@@ -79,13 +79,20 @@ const Login = () => {
 
         try {
             await login(formData.email, formData.password);
+             Swal.fire({
+                    icon: "success",
+                    title: "Bienvenido de vuelta!",
+                    text: "Nos alegra verte de nuevo",
+                    timer: 3000,
+                    showConfirmButton: false
+                });
             navigate('/dashboard');
         } catch (err) {
             console.error("There was a problem with your login:", error);
             Swal.fire({
                     icon: "error",
-                    title: "Oops...",
-                    text: "Something went wrong!",
+                    title: "Contraseña o usuario incorrectos!",
+                    text: "Intenta de nuevo o crea una cuenta!",
                     timer: 3000,
                     showConfirmButton: false
                 });
