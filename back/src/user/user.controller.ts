@@ -1,9 +1,12 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, ParseUUIDPipe, HttpCode, HttpStatus, Query } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Patch, Param, Delete, ParseUUIDPipe, HttpCode, HttpStatus, Query, UseInterceptors, BadRequestException, UploadedFile } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
 import { UsersService } from './user.service';
 import { UpdatePointsDto } from './dto/update-points.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
 
 @ApiTags('Users')
 @Controller('users')
@@ -85,5 +88,48 @@ export class UsersController {
     @ApiResponse({ status: 404, description: 'Usuario no encontrado' })
     async softDelete(@Param('id', ParseUUIDPipe) id: string) {
         return await this.usersService.softDelete(id);
+    }
+
+     // ✅ NUEVO: Subir avatar
+    @Post(':id/avatar')
+    @UseInterceptors(
+        FileInterceptor('avatar', {
+            storage: diskStorage({
+                destination: './uploads/avatars',
+                filename: (req, file, cb) => {
+                    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+                    const ext = extname(file.originalname);
+                    cb(null, `avatar-${uniqueSuffix}${ext}`);
+                },
+            }),
+            fileFilter: (req, file, cb) => {
+                if (!file.mimetype.match(/\/(jpg|jpeg|png|gif|webp)$/)) {
+                    return cb(new BadRequestException('Solo se permiten imágenes'), false);
+                }
+                cb(null, true);
+            },
+            limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+        }),
+    )
+        
+    @ApiConsumes('multipart/form-data')
+    @ApiOperation({ summary: 'Subir avatar del usuario' })
+    async uploadAvatar(
+        @Param('id', ParseUUIDPipe) id: string,
+        @UploadedFile() file: Express.Multer.File,
+    ) {
+        if (!file) {
+            throw new BadRequestException('No se proporcionó ninguna imagen');
+        }
+
+        const avatarUrl = `/uploads/avatars/${file.filename}`;
+        return await this.usersService.update(id, { avatar: avatarUrl });
+    }
+
+    // ✅ NUEVO: Eliminar avatar
+    @Delete(':id/avatar')
+    @ApiOperation({ summary: 'Eliminar avatar del usuario' })
+    async deleteAvatar(@Param('id', ParseUUIDPipe) id: string) {
+        return await this.usersService.update(id, { avatar: undefined });
     }
 }
