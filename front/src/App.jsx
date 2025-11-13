@@ -7,6 +7,7 @@ import Dashboard from '@pages/Dashboard/Dashboard';
 import Achievements from '@pages/Achievements/Achievements';
 import './App.css';
 import { Toaster } from 'react-hot-toast';
+import Profile from './pages/Profile/Profile';
 
 // Componente para proteger rutas
 const PrivateRoute = ({ children }) => {
@@ -74,6 +75,7 @@ function AppRoutes() {
                     </PrivateRoute>
                 }
             />
+            <Route path="/profile" element={<Profile />} />
             <Route path="*" element={<Navigate to="/" />} />
         </Routes>
     );

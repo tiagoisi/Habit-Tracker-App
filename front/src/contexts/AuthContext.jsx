@@ -58,6 +58,19 @@ export const AuthProvider = ({ children }) => {
         localStorage.removeItem('token');
     };
 
+    // ✅ NUEVO: Función para actualizar usuario
+    const updateUser = (userData) => {
+        setUser(prevUser => ({
+            ...prevUser,
+            ...userData
+        }));
+
+         // También actualizar en localStorage si lo estás usando
+    const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+    const updatedUser = { ...currentUser, ...userData };
+    localStorage.setItem('user', JSON.stringify(updatedUser));
+    };
+
     const value = {
         user,
         token,
@@ -65,6 +78,7 @@ export const AuthProvider = ({ children }) => {
         login,
         register,
         logout,
+        updateUser, // ✅ Exportar la función
         isAuthenticated: !!user,
     };
 

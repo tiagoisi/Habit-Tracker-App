@@ -258,12 +258,12 @@ const Dashboard = () => {
                         <Link to="/" className={styles.navLink}>Inicio</Link>
                         <Link to="/achievements" className={styles.navLink}>Logros</Link>
                         <div className={styles.userMenu}>
-                            <div className={styles.userInfo}>
+                            <Link to="/profile" className={styles.userInfo}>
                                 <span className={styles.userName}>{user?.name}</span>
                                 <span className={styles.userPoints}>
                                     ⭐ {user?.points || 0} pts · Nivel {user?.level || 1}
                                 </span>
-                            </div>
+                            </Link>
                             <button onClick={logout} className={styles.logoutBtn}>
                                 Salir
                             </button>
