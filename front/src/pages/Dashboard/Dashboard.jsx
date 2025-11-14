@@ -257,17 +257,26 @@ const Dashboard = () => {
                     <div className={styles.navLinks}>
                         <Link to="/" className={styles.navLink}>Inicio</Link>
                         <Link to="/achievements" className={styles.navLink}>Logros</Link>
-                        <div className={styles.userMenu}>
-                            <Link to="/profile" className={styles.userInfo}>
-                                <span className={styles.userName}>{user?.name}</span>
-                                <span className={styles.userPoints}>
-                                    ⭐ {user?.points || 0} pts · Nivel {user?.level || 1}
-                                </span>
-                            </Link>
-                            <button onClick={logout} className={styles.logoutBtn}>
-                                Salir
-                            </button>
-                        </div>
+                        
+                        {/* ✅ NUEVO: Avatar + nombre clickeable */}
+                        <Link to="/profile" className={styles.profileButton}>
+                            {user?.avatar ? (
+                                <img 
+                                    src={`http://localhost:3000${user.avatar}`}
+                                    alt={user.name}
+                                    className={styles.avatarSmall}
+                                />
+                            ) : (
+                                <div className={styles.avatarSmallPlaceholder}>
+                                    {user?.name?.charAt(0).toUpperCase() || '?'}
+                                </div>
+                            )}
+                            <span className={styles.profileName}>{user?.name}</span>
+                        </Link>
+
+                        <button onClick={logout} className={styles.logoutBtn}>
+                            Salir
+                        </button>
                     </div>
                 </div>
             </nav>

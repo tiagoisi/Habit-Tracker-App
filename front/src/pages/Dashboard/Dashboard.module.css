@@ -596,18 +596,64 @@
     transform: translateY(-2px);
 }
 
-.userInfo {
-    text-decoration: none;
+/* ✅ Botón de perfil con avatar */
+.profileButton {
     display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 0.25rem;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 1rem;
+    background: rgba(16, 185, 129, 0.05);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    border-radius: 999px;
+    text-decoration: none;
+    transition: all 0.3s;
     cursor: pointer;
-    transition: opacity 0.2s;
 }
 
-.userInfo:hover {
-    opacity: 0.8;
+.profileButton:hover {
+    background: rgba(16, 185, 129, 0.1);
+    border-color: rgba(16, 185, 129, 0.3);
+    transform: translateY(-2px);
+}
+
+.avatarSmall {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #10b981;
+}
+
+.avatarSmallPlaceholder {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    font-weight: 700;
+    color: white;
+    border: 2px solid rgba(16, 185, 129, 0.3);
+}
+
+.profileName {
+    color: #e2e8f0;
+    font-weight: 600;
+    font-size: 0.95rem;
+    white-space: nowrap;
+}
+
+/* Responsive */
+@media (max-width: 968px) {
+    .profileButton {
+        padding: 0.5rem;
+    }
+
+    .profileName {
+        display: none; /* Ocultar nombre en mobile, solo avatar */
+    }
 }
 
 /* Responsive */
