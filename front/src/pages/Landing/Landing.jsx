@@ -1,14 +1,25 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '@contexts/AuthContext';
+import { useState, useEffect } from 'react';
 import styles from './Landing.module.css';
 
 const Landing = () => {
     const { isAuthenticated } = useAuth();
+    const [scrolled, setScrolled] = useState(false);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            setScrolled(window.scrollY > 50);
+        };
+
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
 
     return (
         <div className={styles.container}>
             {/* Navbar */}
-            <nav className={styles.navbar}>
+            <nav className={`${styles.navbar} ${scrolled ? styles.scrolled : ''}`}>
                 <div className={styles.navContent}>
                     <Link to="/" className={styles.logoContainer}>
                         <img 
@@ -38,30 +49,90 @@ const Landing = () => {
 
             {/* Hero Section */}
             <section className={styles.hero}>
+                {/* Animated gradient background */}
+                <div className={styles.gradientOrb1}></div>
+                <div className={styles.gradientOrb2}></div>
+                <div className={styles.gradientOrb3}></div>
+                
+                {/* Floating particles */}
+                <div className={styles.particles}>
+                    {[...Array(15)].map((_, i) => (
+                        <div 
+                            key={i} 
+                            className={styles.particle}
+                            style={{
+                                left: `${Math.random() * 100}%`,
+                                top: `${Math.random() * 100}%`,
+                                animationDelay: `${Math.random() * 5}s`,
+                                animationDuration: `${10 + Math.random() * 10}s`
+                            }}
+                        />
+                    ))}
+                </div>
+
                 <div className={styles.heroContent}>
                     <h1 className={styles.heroTitle}>
                         Construí tu mejor versión,
                         <span className={styles.heroAccent}> un hábito a la vez</span>
                     </h1>
                     <p className={styles.heroSubtitle}>
-                        Transformá tu vida con Daily Forge. Seguí tus hábitos, mantené rachas y desbloqueá logros
-                        mientras construís la persona que querés ser.
+                        Pequeños hábitos, grandes cambios.
                     </p>
                     <div className={styles.heroButtons}>
                         {isAuthenticated ? (
                             <Link to="/dashboard" className={styles.btnHero}>
-                                Ir al Dashboard
+                                <span>Ir al Dashboard</span>
+                                <span className={styles.btnArrow}>→</span>
                             </Link>
                         ) : (
                             <>
                                 <Link to="/register" className={styles.btnHero}>
-                                    Comenzar Ahora
+                                    <span>Comenzar Ahora</span>
+                                    <span className={styles.btnArrow}>→</span>
                                 </Link>
                                 <Link to="/login" className={styles.btnSecondary}>
                                     Ya tengo cuenta
                                 </Link>
                             </>
                         )}
+                    </div>
+                </div>
+
+                {/* Floating icons */}
+                <div className={styles.floatingIcons}>
+                    <div className={styles.icon} style={{top: '15%', left: '8%'}}>
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+                            <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/>
+                        </svg>
+                    </div>
+                    <div className={styles.icon} style={{top: '25%', right: '12%'}}>
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
+                            <path d="M12 6V12L16 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                        </svg>
+                    </div>
+                    <div className={styles.icon} style={{bottom: '30%', left: '10%'}}>
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+                            <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" fill="currentColor"/>
+                        </svg>
+                    </div>
+                    <div className={styles.icon} style={{bottom: '20%', right: '8%'}}>
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+                            <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="currentColor"/>
+                            <path d="M2 17L12 22L22 17" stroke="currentColor" strokeWidth="2"/>
+                            <path d="M2 12L12 17L22 12" stroke="currentColor" strokeWidth="2"/>
+                        </svg>
+                    </div>
+                    <div className={styles.icon} style={{top: '50%', left: '5%'}}>
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+                            <path d="M9 11L12 14L22 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            <path d="M21 12V19C21 20.1046 20.1046 21 19 21H5C3.89543 21 3 20.1046 3 19V5C3 3.89543 3.89543 3 5 3H16" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                        </svg>
+                    </div>
+                    <div className={styles.icon} style={{top: '60%', right: '5%'}}>
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+                            <path d="M3 13H7L10 20L14 4L17 13H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
                     </div>
                 </div>
             </section>
