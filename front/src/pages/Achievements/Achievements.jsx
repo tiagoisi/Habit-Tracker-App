@@ -1,3 +1,4 @@
+// Achievements.jsx
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@contexts/AuthContext';
@@ -9,6 +10,7 @@ const Achievements = () => {
     const [achievements, setAchievements] = useState([]);
     const [progress, setProgress] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [filter, setFilter] = useState('all'); // 'all', 'unlocked', 'locked'
 
     useEffect(() => {
         loadAchievements();
@@ -30,10 +32,22 @@ const Achievements = () => {
     const unlockedAchievements = achievements.filter(a => a.isUnlocked);
     const lockedAchievements = achievements.filter(a => !a.isUnlocked);
 
+    const getFilteredAchievements = () => {
+        if (filter === 'unlocked') return unlockedAchievements;
+        if (filter === 'locked') return lockedAchievements;
+        return achievements;
+    };
+
+    const filteredAchievements = getFilteredAchievements();
+
     if (loading) {
         return (
             <div className={styles.loading}>
-                <div className="spinner"></div>
+                <div className={styles.spinner}>
+                    <div className={styles.spinnerRing}></div>
+                    <span className={styles.spinnerIcon}>🏆</span>
+                </div>
+                <p className={styles.loadingText}>Cargando logros...</p>
             </div>
         );
     }
@@ -69,14 +83,22 @@ const Achievements = () => {
             </nav>
 
             <main className={styles.main}>
+                {/* Header mejorado */}
                 <div className={styles.header}>
-                    <h1 className={styles.pageTitle}>🏆 Mis Logros</h1>
+                    <div className={styles.titleWrapper}>
+                        <span className={styles.titleIcon}>🏆</span>
+                        <h1 className={styles.pageTitle}>Mis Logros</h1>
+                    </div>
+                    
                     {progress && (
-                        <div className={styles.progressBar}>
-                            <div className={styles.progressInfo}>
-                                <span className={styles.progressText}>
-                                    {progress.unlocked} de {progress.total} desbloqueados
-                                </span>
+                        <div className={styles.progressCard}>
+                            <div className={styles.progressHeader}>
+                                <div className={styles.progressInfo}>
+                                    <span className={styles.progressLabel}>Progreso total</span>
+                                    <span className={styles.progressText}>
+                                        {progress.unlocked} de {progress.total} desbloqueados
+                                    </span>
+                                </div>
                                 <span className={styles.progressPercent}>
                                     {progress.percentage}%
                                 </span>
@@ -85,107 +107,141 @@ const Achievements = () => {
                                 <div 
                                     className={styles.progressFill}
                                     style={{ width: `${progress.percentage}%` }}
-                                />
+                                >
+                                    <div className={styles.progressShine}></div>
+                                </div>
                             </div>
                         </div>
                     )}
                 </div>
 
-                {/* Logros desbloqueados */}
-                {unlockedAchievements.length > 0 && (
-                    <section className={styles.section}>
-                        <h2 className={styles.sectionTitle}>✨ Desbloqueados</h2>
-                        <div className={styles.achievementsGrid}>
-                            {unlockedAchievements.map((achievement) => (
-                                <div key={achievement.id} className={styles.achievementCard}>
-                                    <div className={styles.achievementIcon}>
-                                        {achievement.icon}
-                                    </div>
-                                    <div className={styles.achievementInfo}>
-                                        <h3 className={styles.achievementTitle}>
-                                            {achievement.title}
-                                        </h3>
-                                        <p className={styles.achievementDescription}>
-                                            {achievement.description}
-                                        </p>
-                                        <div className={styles.achievementFooter}>
-                                            <span className={styles.achievementPoints}>
-                                                +{achievement.pointsReward} pts
-                                            </span>
-                                            <span className={styles.achievementDate}>
-                                                {new Date(achievement.unlockedAt).toLocaleDateString('es-AR')}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <div className={styles.unlockedBadge}>✓</div>
-                                </div>
-                            ))}
-                        </div>
-                    </section>
-                )}
+                {/* Filtros */}
+                <div className={styles.filters}>
+                    <button 
+                        className={`${styles.filterBtn} ${filter === 'all' ? styles.filterActive : ''}`}
+                        onClick={() => setFilter('all')}
+                    >
+                        <span className={styles.filterIcon}>📊</span>
+                        <span>Todos</span>
+                        <span className={styles.filterCount}>{achievements.length}</span>
+                    </button>
+                    <button 
+                        className={`${styles.filterBtn} ${filter === 'unlocked' ? styles.filterActive : ''}`}
+                        onClick={() => setFilter('unlocked')}
+                    >
+                        <span className={styles.filterIcon}>✨</span>
+                        <span>Desbloqueados</span>
+                        <span className={styles.filterCount}>{unlockedAchievements.length}</span>
+                    </button>
+                    <button 
+                        className={`${styles.filterBtn} ${filter === 'locked' ? styles.filterActive : ''}`}
+                        onClick={() => setFilter('locked')}
+                    >
+                        <span className={styles.filterIcon}>🔒</span>
+                        <span>Bloqueados</span>
+                        <span className={styles.filterCount}>{lockedAchievements.length}</span>
+                    </button>
+                </div>
 
-                {/* ✅ Logros bloqueados CON PROGRESO */}
-                {lockedAchievements.length > 0 && (
-                    <section className={styles.section}>
-                        <h2 className={styles.sectionTitle}>🔒 Por desbloquear</h2>
-                        <div className={styles.achievementsGrid}>
-                            {lockedAchievements.map((achievement) => (
-                                <div 
-                                    key={achievement.id} 
-                                    className={`${styles.achievementCard} ${styles.locked}`}
-                                >
-                                    <div className={styles.achievementIcon}>
-                                        {achievement.icon}
-                                    </div>
-                                    <div className={styles.achievementInfo}>
+                {/* Grid de logros */}
+                {filteredAchievements.length > 0 ? (
+                    <div className={styles.achievementsGrid}>
+                        {filteredAchievements.map((achievement) => (
+                            <div 
+                                key={achievement.id} 
+                                className={`${styles.achievementCard} ${achievement.isUnlocked ? styles.unlocked : styles.locked}`}
+                            >
+                                <div className={styles.cardGlow}></div>
+                                
+                                <div className={styles.achievementIcon}>
+                                    {achievement.icon}
+                                </div>
+                                
+                                <div className={styles.achievementContent}>
+                                    <div className={styles.achievementHeader}>
                                         <h3 className={styles.achievementTitle}>
                                             {achievement.title}
                                         </h3>
-                                        <p className={styles.achievementDescription}>
-                                            {achievement.description}
-                                        </p>
-                                        
-                                        {/* ✅ BARRA DE PROGRESO */}
+                                        {achievement.isUnlocked ? (
+                                            <div className={styles.unlockedBadge}>
+                                                <span>✓</span>
+                                            </div>
+                                        ) : (
+                                            <div className={styles.lockedBadge}>🔒</div>
+                                        )}
+                                    </div>
+                                    
+                                    <p className={styles.achievementDescription}>
+                                        {achievement.description}
+                                    </p>
+                                    
+                                    {/* Progreso para bloqueados */}
+                                    {!achievement.isUnlocked && (
                                         <div className={styles.achievementProgress}>
                                             <div className={styles.progressBarSmall}>
                                                 <div 
                                                     className={styles.progressBarFill}
                                                     style={{ width: `${achievement.progressPercentage}%` }}
-                                                />
+                                                >
+                                                    <div className={styles.progressBarShine}></div>
+                                                </div>
                                             </div>
-                                            <span className={styles.progressText}>
-                                                {achievement.currentProgress}/{achievement.requiredCount}
-                                            </span>
+                                            <div className={styles.progressStats}>
+                                                <span className={styles.progressCurrent}>
+                                                    {achievement.currentProgress}/{achievement.requiredCount}
+                                                </span>
+                                                <span className={styles.progressPercentText}>
+                                                    {achievement.progressPercentage}%
+                                                </span>
+                                            </div>
                                         </div>
-
-                                        <div className={styles.achievementFooter}>
-                                            <span className={styles.achievementPoints}>
-                                                +{achievement.pointsReward} pts
+                                    )}
+                                    
+                                    <div className={styles.achievementFooter}>
+                                        <span className={styles.achievementPoints}>
+                                            <span className={styles.pointsPlus}>+</span>
+                                            {achievement.pointsReward}
+                                            <span className={styles.pointsLabel}>pts</span>
+                                        </span>
+                                        {achievement.isUnlocked && (
+                                            <span className={styles.achievementDate}>
+                                                {new Date(achievement.unlockedAt).toLocaleDateString('es-AR')}
                                             </span>
-                                            <span className={styles.achievementRequirement}>
-                                                {achievement.progressPercentage}% completado
-                                            </span>
-                                        </div>
+                                        )}
                                     </div>
-                                    <div className={styles.lockedBadge}>🔒</div>
                                 </div>
-                            ))}
-                        </div>
-                    </section>
-                )}
-
-                {achievements.length === 0 && (
+                            </div>
+                        ))}
+                    </div>
+                ) : (
                     <div className={styles.emptyState}>
-                        <div className={styles.emptyIcon}>🏆</div>
+                        <div className={styles.emptyIcon}>
+                            {filter === 'unlocked' ? '🎯' : filter === 'locked' ? '🔓' : '🏆'}
+                        </div>
                         <h3 className={styles.emptyTitle}>
-                            No hay logros disponibles
+                            {filter === 'unlocked' 
+                                ? 'Aún no has desbloqueado logros' 
+                                : filter === 'locked'
+                                ? '¡Felicitaciones! Has desbloqueado todos los logros'
+                                : 'No hay logros disponibles'
+                            }
                         </h3>
                         <p className={styles.emptyText}>
-                            Comenzá a completar hábitos para desbloquear logros
+                            {filter === 'unlocked' 
+                                ? 'Comenzá a completar hábitos para desbloquear tus primeros logros' 
+                                : filter === 'locked'
+                                ? 'Sos un verdadero maestro de los hábitos'
+                                : 'Pronto habrá nuevos desafíos disponibles'
+                            }
                         </p>
-                        <Link to="/dashboard" className={styles.emptyButton}>
-                            Ir al Dashboard
-                        </Link>
+                        {filter !== 'all' && (
+                            <button 
+                                onClick={() => setFilter('all')} 
+                                className={styles.emptyButton}
+                            >
+                                Ver todos los logros
+                            </button>
+                        )}
                     </div>
                 )}
             </main>
