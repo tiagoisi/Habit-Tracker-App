@@ -9,6 +9,53 @@ import styles from './Dashboard.module.css';
 import toast from 'react-hot-toast';
 import confetti from 'canvas-confetti';
 
+// Componente de Skeleton Loader
+const SkeletonCard = () => (
+    <div className={styles.skeletonCard}>
+        <div className={`${styles.skeletonLine} ${styles.skeletonLineLg}`}></div>
+        <div className={`${styles.skeletonLine} ${styles.skeletonLineMd}`}></div>
+        <div className={`${styles.skeletonLine} ${styles.skeletonLineSm}`}></div>
+    </div>
+);
+
+// Componente de Progreso Circular
+const CircularProgress = ({ percentage, size = 80, strokeWidth = 8 }) => {
+    const radius = (size - strokeWidth) / 2;
+    const circumference = radius * 2 * Math.PI;
+    const offset = circumference - (percentage / 100) * circumference;
+
+    return (
+        <div className={styles.circularProgress} style={{ width: size, height: size }}>
+            <svg width={size} height={size}>
+                <defs>
+                    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stopColor="#10b981" />
+                        <stop offset="100%" stopColor="#34d399" />
+                    </linearGradient>
+                </defs>
+                <circle
+                    className={styles.circularProgressBg}
+                    cx={size / 2}
+                    cy={size / 2}
+                    r={radius}
+                    strokeWidth={strokeWidth}
+                />
+                <circle
+                    className={styles.circularProgressFill}
+                    cx={size / 2}
+                    cy={size / 2}
+                    r={radius}
+                    strokeWidth={strokeWidth}
+                    strokeDasharray={circumference}
+                    strokeDashoffset={offset}
+                    stroke="url(#gradient)"
+                />
+            </svg>
+            <div className={styles.circularProgressText}>{percentage}%</div>
+        </div>
+    );
+};
+
 // 💥 FUNCIÓN PARA DISPARAR EL CONFETI
 const runConfetti = () => {
     confetti({
@@ -27,9 +74,9 @@ const Dashboard = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingHabit, setEditingHabit] = useState(null);
 
-    // ✅ Estados para filtros y búsqueda
-    const [filter, setFilter] = useState('all'); // 'all', 'completed', 'pending'
-    const [sortBy, setSortBy] = useState('name'); // 'name', 'streak', 'recent'
+    // Estados para filtros y búsqueda
+    const [filter, setFilter] = useState('all');
+    const [sortBy, setSortBy] = useState('name');
     const [searchTerm, setSearchTerm] = useState('');
 
     useEffect(() => {
@@ -55,11 +102,10 @@ const Dashboard = () => {
         }
     };
 
-    // ✅ Filtrado, búsqueda y ordenamiento con useMemo
+    // Filtrado, búsqueda y ordenamiento
     const filteredAndSortedHabits = useMemo(() => {
         let result = [...habits];
 
-        // 1. Aplicar búsqueda
         if (searchTerm.trim()) {
             result = result.filter(habit => 
                 habit.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -67,7 +113,6 @@ const Dashboard = () => {
             );
         }
 
-        // 2. Aplicar filtro
         switch (filter) {
             case 'completed':
                 result = result.filter(h => h.completedToday);
@@ -76,11 +121,9 @@ const Dashboard = () => {
                 result = result.filter(h => !h.completedToday);
                 break;
             default:
-                // 'all' - no filtrar
                 break;
         }
 
-        // 3. Aplicar ordenamiento
         switch (sortBy) {
             case 'streak':
                 result.sort((a, b) => b.currentStreak - a.currentStreak);
@@ -97,16 +140,10 @@ const Dashboard = () => {
         return result;
     }, [habits, filter, sortBy, searchTerm]);
 
-    // ✅ Cálculo del máximo de hábitos para el eje Y (Paso 1)
+    // Cálculo del máximo de hábitos para el eje Y
     const maxActiveHabits = useMemo(() => {
-        // Usamos el total de hábitos del resumen. Si no está disponible, usamos el length.
         const max = summary?.totalHabits ?? habits.length;
-        
-        // El máximo de la data mensual puede ser diferente al total de hábitos (si la API tiene un error)
-        // Por seguridad, encontramos el máximo de hábitos completados en la data mensual.
         const maxCompletedInMonth = monthlyData.reduce((max, item) => Math.max(max, item.completed ?? 0), 0);
-        
-        // Usamos el mayor de los dos (Total de Hábitos vs Máximo completado en la data) para asegurar que el gráfico contenga la línea.
         return Math.max(max, maxCompletedInMonth, 1); 
     }, [summary, habits, monthlyData]);
 
@@ -117,7 +154,7 @@ const Dashboard = () => {
                 toast.success('Hábito actualizado correctamente');
             } else {
                 await habitService.create(habitData);
-                toast.success('Hábito creado con exito!🎉')
+                toast.success('Hábito creado con éxito! 🎉')
             }
             await loadData();
             setIsModalOpen(false);
@@ -131,22 +168,17 @@ const Dashboard = () => {
 
     const handleComplete = async (habitId) => {
         try {
-            // ✅ Guardar posición actual del scroll
             const scrollPosition = window.scrollY;
-
-            // 💥 LÓGICA DE CONFETI: Determinar si este es el último pendiente ANTES de completar
             const habitsBeforeCompletion = habits; 
             const pendingBefore = habitsBeforeCompletion.filter(h => !h.completedToday).length;
             
             const result = await habitService.complete(habitId);
-            await loadData(); // Recargar datos para el estado actualizado
+            await loadData();
             
-            // ✅ Toast de éxito con puntos ganados
             toast.success('¡Hábito completado! +10 pts 🎯', {
                 icon: '✅',
             });
 
-            // ✅ Si hay logros nuevos, mostrar toast especial
             if (result.newAchievements && result.newAchievements.length > 0) {
                 result.newAchievements.forEach((achievement) => {
                     toast.success(
@@ -159,7 +191,6 @@ const Dashboard = () => {
                 });
             }
 
-            // 💥 LÓGICA DE CONFETI: Si quedaba solo 1 pendiente (el que acabamos de completar), lanzamos confeti
             if (pendingBefore === 1) { 
                 runConfetti();
                 toast.success('¡Felicitaciones! 🥳 ¡Completaste todos los hábitos del día!', { 
@@ -168,7 +199,6 @@ const Dashboard = () => {
                 });
             }
 
-            // ✅ Restaurar posición después de recargar
             setTimeout(() => {
                 window.scrollTo(0, scrollPosition);
             }, 0);
@@ -176,7 +206,6 @@ const Dashboard = () => {
             return result;
         } catch (error) {
             console.error('Error al completar hábito:', error);
-            // ✅ Toast de error
             toast.error(error.response?.data?.message || 'Error al completar el hábito');
             throw error;
         }
@@ -184,7 +213,6 @@ const Dashboard = () => {
 
     const handleUncomplete = async (habitId) => {
         try {
-            // ✅ Guardar posición actual del scroll
             const scrollPosition = window.scrollY;
             
             await habitService.uncomplete(habitId);
@@ -194,7 +222,6 @@ const Dashboard = () => {
                 icon: ':('
             });
             
-            // ✅ Restaurar posición después de recargar
             setTimeout(() => {
                 window.scrollTo(0, scrollPosition);
             }, 0);
@@ -228,19 +255,88 @@ const Dashboard = () => {
         setIsModalOpen(true);
     };
 
-    if (loading) {
-        return (
-            <div className={styles.loading}>
-                <div className="spinner"></div>
-            </div>
-        );
-    }
+    const handleCompleteAll = async () => {
+        const pendingHabits = habits.filter(h => !h.completedToday);
+        
+        try {
+            for (const habit of pendingHabits) {
+                await habitService.complete(habit.id);
+            }
+            await loadData();
+            runConfetti();
+            toast.success('¡Todos los hábitos completados! 🎉', {
+                duration: 5000,
+                icon: '🏆'
+            });
+        } catch (error) {
+            console.error('Error al completar todos los hábitos:', error);
+            toast.error('Error al completar todos los hábitos');
+        }
+    };
 
-    // obtener el nombre del mes
     const getCurrentMonthName = () => {
         const monthName = new Date().toLocaleDateString('es-AR', { month: 'long' });
         return monthName.charAt(0).toUpperCase() + monthName.slice(1);
     };
+
+    if (loading) {
+        return (
+            <div className={styles.container}>
+                {/* Navbar */}
+                <nav className={styles.navbar}>
+                    <div className={styles.navContent}>
+                        <Link to="/" className={styles.logoContainer}>
+                            <img 
+                                src="/logo.png" 
+                                alt="Daily Forge" 
+                                className={styles.logoImage}
+                            />
+                        </Link>
+                        <div className={styles.navLinks}>
+                            <Link to="/" className={styles.navLink}>Inicio</Link>
+                            <Link to="/achievements" className={styles.navLink}>Logros</Link>
+                            
+                            <Link to="/profile" className={styles.profileButton}>
+                                {user?.avatar ? (
+                                    <img 
+                                        src={`http://localhost:3000${user.avatar}`}
+                                        alt={user.name}
+                                        className={styles.avatarSmall}
+                                    />
+                                ) : (
+                                    <div className={styles.avatarSmallPlaceholder}>
+                                        {user?.name?.charAt(0).toUpperCase() || '?'}
+                                    </div>
+                                )}
+                                <span className={styles.profileName}>{user?.name}</span>
+                            </Link>
+
+                            <button onClick={logout} className={styles.logoutBtn}>
+                                Salir
+                            </button>
+                        </div>
+                    </div>
+                </nav>
+
+                <div className={styles.loadingState}>
+                    <div className={styles.loadingHeader}>
+                        <div className={`${styles.skeletonLine} ${styles.skeletonLineXl}`}></div>
+                        <div className={`${styles.skeletonLine} ${styles.skeletonLineLg}`}></div>
+                    </div>
+                    <div className={styles.statsGrid}>
+                        {[1, 2, 3].map(i => <SkeletonCard key={i} />)}
+                    </div>
+                    <div className={styles.chartSkeleton}>
+                        <div className={`${styles.skeletonLine} ${styles.skeletonLineLg}`}></div>
+                        <div className={styles.skeletonChartBox}></div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    const completionPercentage = summary ? Math.round((summary.completedToday / summary.totalHabits) * 100) : 0;
+    const pendingCount = habits.filter(h => !h.completedToday).length;
 
     return (
         <div className={styles.container}>
@@ -258,7 +354,6 @@ const Dashboard = () => {
                         <Link to="/" className={styles.navLink}>Inicio</Link>
                         <Link to="/achievements" className={styles.navLink}>Logros</Link>
                         
-                        {/* ✅ NUEVO: Avatar + nombre clickeable */}
                         <Link to="/profile" className={styles.profileButton}>
                             {user?.avatar ? (
                                 <img 
@@ -282,96 +377,142 @@ const Dashboard = () => {
             </nav>
 
             <main className={styles.main}>
-                <div className={styles.welcome}>
-                    <h2 className={styles.welcomeTitle}>
-                        ¡Hola, {user?.name}! 👋
-                    </h2>
-                    <p className={styles.welcomeText}>
-                        {summary && `Completaste ${summary.completedToday} de ${summary.totalHabits} hábitos hoy`}
-                    </p>
+                {/* Hero Section */}
+                <div className={styles.heroSection}>
+                    <div className={styles.heroContent}>
+                        <h1 className={styles.heroTitle}>
+                            ¡Hola, {user?.name}! 👋
+                        </h1>
+                        <p className={styles.heroSubtitle}>
+                            Continuá construyendo tu mejor versión
+                        </p>
+                    </div>
+                    
+                    <div className={styles.heroProgress}>
+                        <CircularProgress percentage={completionPercentage} />
+                        <div className={styles.heroProgressInfo}>
+                            <p className={styles.progressLabel}>Progreso de hoy</p>
+                            <p className={styles.progressValue}>
+                                {summary?.completedToday} de {summary?.totalHabits} completados
+                            </p>
+                        </div>
+                    </div>
                 </div>
 
+                {/* Quick Actions */}
+                {pendingCount > 0 && (
+                    <div className={styles.quickActionsBanner}>
+                        <div className={styles.quickActionsContent}>
+                            <span className={styles.quickActionsIcon}>⚡</span>
+                            <div>
+                                <p className={styles.quickActionsTitle}>
+                                    Tenés {pendingCount} {pendingCount === 1 ? 'hábito pendiente' : 'hábitos pendientes'}
+                                </p>
+                                <p className={styles.quickActionsSubtitle}>
+                                    ¡Estás a pocos pasos de completar tu día!
+                                </p>
+                            </div>
+                        </div>
+                        <button onClick={handleCompleteAll} className={styles.quickActionBtn}>
+                            Completar todos
+                        </button>
+                    </div>
+                )}
+
+                {/* Stats Grid */}
                 {summary && (
-                    <div className={styles.stats}>
-                        <div className={styles.statCard}>
-                            <div className={styles.statIcon}>🎯</div>
-                            <div className={styles.statInfo}>
+                    <div className={styles.statsGrid}>
+                        <div className={`${styles.statCard} ${styles.statCardPulse}`}>
+                            <div className={styles.statIconWrapper}>
+                                <span className={styles.statIcon}>🎯</span>
+                            </div>
+                            <div className={styles.statContent}>
                                 <p className={styles.statValue}>{summary.totalHabits}</p>
                                 <p className={styles.statLabel}>Hábitos activos</p>
+                                <div className={`${styles.statTrend} ${styles.positive}`}>
+                                    <span className={styles.trendIcon}>↗</span>
+                                </div>
                             </div>
                         </div>
 
-                        <div className={styles.statCard}>
-                            <div className={styles.statIcon}>✅</div>
-                            <div className={styles.statInfo}>
+                        <div className={`${styles.statCard} ${styles.statCardPulse}`} style={{ animationDelay: '0.1s' }}>
+                            <div className={styles.statIconWrapper}>
+                                <span className={styles.statIcon}>✅</span>
+                            </div>
+                            <div className={styles.statContent}>
                                 <p className={styles.statValue}>{summary.completedToday}</p>
                                 <p className={styles.statLabel}>Completados hoy</p>
+                                <div className={styles.statProgress}>
+                                    <div 
+                                        className={styles.statProgressBar}
+                                        style={{ width: `${completionPercentage}%` }}
+                                    ></div>
+                                </div>
                             </div>
                         </div>
 
-                        <div className={styles.statCard}>
-                            <div className={styles.statIcon}>📊</div>
-                            <div className={styles.statInfo}>
+                        <div className={`${styles.statCard} ${styles.statCardPulse}`} style={{ animationDelay: '0.2s' }}>
+                            <div className={styles.statIconWrapper}>
+                                <span className={styles.statIcon}>📊</span>
+                            </div>
+                            <div className={styles.statContent}>
                                 <p className={styles.statValue}>{summary.monthlyCompletionRate}%</p>
-                                <p className={styles.statLabel}>Tasa de completación</p>
+                                <p className={styles.statLabel}>Tasa mensual</p>
                                 <p className={styles.statSubtext}>
-                                    {summary.monthlyCompletions} de {summary.possibleCompletions} este mes
+                                    {summary.monthlyCompletions}/{summary.possibleCompletions} completados
                                 </p>
                             </div>
                         </div>
                     </div>
                 )}
 
-                {/* Gráfico de progreso mensual */}
+                {/* Chart Section */}
                 <div className={styles.chartSection}>
-                    <h3 className={styles.chartTitle}>Progreso de {getCurrentMonthName()}</h3>
+                    <div className={styles.chartHeader}>
+                        <h3 className={styles.chartTitle}>📈 Progreso de {getCurrentMonthName()}</h3>
+                        <div className={styles.chartLegend}>
+                            <span className={styles.legendItem}>
+                                <span className={styles.legendDot}></span>
+                                Hábitos completados
+                            </span>
+                        </div>
+                    </div>
+                    
                     <div className={styles.chartContainer}>
                         {monthlyData.length > 0 ? (
-                            <ResponsiveContainer width="100%" height={300}>
-                                <LineChart data={monthlyData} margin={{ top: 10, right: 20, left: 0, bottom: 10 }}>
+                            <ResponsiveContainer width="100%" height={320}>
+                                <LineChart data={monthlyData} margin={{ top: 20, right: 30, left: 0, bottom: 20 }}>
+                                    <defs>
+                                        <linearGradient id="colorCompleted" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+                                            <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                                        </linearGradient>
+                                    </defs>
                                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(16, 185, 129, 0.1)" />
                                     
                                     <XAxis 
                                         dataKey="day"
-                                        tick={{ fill: '#94a3b8', fontSize: 12 }}
-                                        stroke="#94a3b8"
-                                        label={{ value: 'Día del mes', position: 'insideBottom', offset: -5, fill: '#94a3b8' }}
+                                        tick={{ fill: '#64748b', fontSize: 12 }}
+                                        stroke="#334155"
                                     />
 
                                     <YAxis
-                                        tickCount={maxActiveHabits + 1} // <-- Uso del valor dinámico
-                                        domain={[0, maxActiveHabits]} // <-- Esto ayuda a que el gráfico tenga el rango correcto
-                                        tick={{ fill: '#94a3b8', fontSize: 12 }}
-                                        stroke="#94a3b8"
+                                        tickCount={maxActiveHabits + 1}
+                                        domain={[0, maxActiveHabits]}
+                                        tick={{ fill: '#64748b', fontSize: 12 }}
+                                        stroke="#334155"
                                         allowDecimals={false}
-                                        label={{ 
-                                            value: 'Hábitos completados', 
-                                            angle: -90, 
-                                            position: 'insideLeft', 
-                                            fill: '#94a3b8',
-                                            dy: 50
-                                        }}
                                     />
 
                                     <Tooltip 
                                         contentStyle={{
-                                            backgroundColor: 'rgba(15, 23, 42, 0.98)',
-                                            border: '1px solid rgba(16, 185, 129, 0.5)',
-                                            borderRadius: '0.75rem',
-                                            padding: '12px 16px',
-                                            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.5)',
+                                            backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                                            border: '1px solid rgba(16, 185, 129, 0.3)',
+                                            borderRadius: '12px',
+                                            padding: '12px',
                                         }}
-                                        labelStyle={{ 
-                                            color: '#10b981',
-                                            fontWeight: '600',
-                                            fontSize: '14px',
-                                            marginBottom: '4px',
-                                        }}
-                                        itemStyle={{
-                                            color: '#e2e8f0',
-                                            fontSize: '13px',
-                                            fontWeight: '500',
-                                        }}
+                                        labelStyle={{ color: '#10b981', fontWeight: '600' }}
+                                        itemStyle={{ color: '#e2e8f0' }}
                                         formatter={(value) => {
                                             if (value === null) return ['Sin datos aún', ''];
                                             return [`${value} ${value === 1 ? 'hábito' : 'hábitos'}`, 'Completados'];
@@ -384,9 +525,9 @@ const Dashboard = () => {
                                         dataKey="completed" 
                                         stroke="#10b981"
                                         strokeWidth={3}
-                                        dot={{ fill: '#10b981', strokeWidth: 2, r: 5 }}
-                                        activeDot={{ r: 7, fill: '#34d399' }}
-                                        connectNulls={false}
+                                        dot={{ fill: '#10b981', strokeWidth: 2, r: 4 }}
+                                        activeDot={{ r: 6, fill: '#34d399' }}
+                                        fill="url(#colorCompleted)"
                                     />
                                 </LineChart>
                             </ResponsiveContainer>
@@ -401,11 +542,13 @@ const Dashboard = () => {
                     </div>
                 </div>
 
+                {/* Habits Section */}
                 <div className={styles.habitsSection}>
                     <div className={styles.sectionHeader}>
                         <h3 className={styles.sectionTitle}>Mis Hábitos</h3>
                         <button onClick={handleNewHabit} className={styles.addButton}>
-                            + Nuevo Hábito
+                            <span className={styles.addIcon}>+</span>
+                            Nuevo Hábito
                         </button>
                     </div>
 
@@ -424,9 +567,8 @@ const Dashboard = () => {
                         </div>
                     ) : (
                         <>
-                            {/* ✅ Barra de filtros y búsqueda */}
+                            {/* Barra de filtros y búsqueda */}
                             <div className={styles.filtersBar}>
-                                {/* Búsqueda */}
                                 <div className={styles.searchBox}>
                                     <span className={styles.searchIcon}>🔍</span>
                                     <input
@@ -446,7 +588,6 @@ const Dashboard = () => {
                                     )}
                                 </div>
 
-                                {/* Filtros */}
                                 <div className={styles.filterButtons}>
                                     <button
                                         onClick={() => setFilter('all')}
@@ -468,7 +609,6 @@ const Dashboard = () => {
                                     </button>
                                 </div>
 
-                                {/* Ordenamiento */}
                                 <div className={styles.sortBox}>
                                     <label className={styles.sortLabel}>Ordenar:</label>
                                     <select
@@ -520,15 +660,20 @@ const Dashboard = () => {
                                 </div>
                             ) : (
                                 <div className={styles.habitsList}>
-                                    {filteredAndSortedHabits.map((habit) => (
-                                        <HabitCard
+                                    {filteredAndSortedHabits.map((habit, index) => (
+                                        <div 
                                             key={habit.id}
-                                            habit={habit}
-                                            onComplete={handleComplete}
-                                            onUncomplete={handleUncomplete}
-                                            onEdit={handleEdit}
-                                            onDelete={handleDelete}
-                                        />
+                                            className={styles.habitCardWrapper}
+                                            style={{ animationDelay: `${index * 0.05}s` }}
+                                        >
+                                            <HabitCard
+                                                habit={habit}
+                                                onComplete={handleComplete}
+                                                onUncomplete={handleUncomplete}
+                                                onEdit={handleEdit}
+                                                onDelete={handleDelete}
+                                            />
+                                        </div>
                                     ))}
                                 </div>
                             )}
