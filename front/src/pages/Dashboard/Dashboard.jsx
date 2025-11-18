@@ -51,12 +51,12 @@ const CircularProgress = ({ percentage, size = 80, strokeWidth = 8 }) => {
                     stroke="url(#gradient)"
                 />
             </svg>
-            <div className={styles.circularProgressText}>{percentage ? 0 : 0}%</div>
+            <div className={styles.circularProgressText}>{percentage ? percentage : 0}%</div>
         </div>
     );
 };
 
-// 💥 FUNCIÓN PARA DISPARAR EL CONFETI
+// 💥 FUNCIÓN PARA DISPARAR EL CONFETTI
 const runConfetti = () => {
     confetti({
         particleCount: 150,
