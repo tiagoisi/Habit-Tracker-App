@@ -51,7 +51,7 @@ const CircularProgress = ({ percentage, size = 80, strokeWidth = 8 }) => {
                     stroke="url(#gradient)"
                 />
             </svg>
-            <div className={styles.circularProgressText}>{percentage}%</div>
+            <div className={styles.circularProgressText}>{percentage ? 0 : 0}%</div>
         </div>
     );
 };
