@@ -78,7 +78,7 @@ export const AuthProvider = ({ children }) => {
         login,
         register,
         logout,
-        updateUser, // ✅ Exportar la función
+        updateUser,
         isAuthenticated: !!user,
     };
 
