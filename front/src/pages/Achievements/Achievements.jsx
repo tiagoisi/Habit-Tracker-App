@@ -67,17 +67,23 @@ const Achievements = () => {
                     <div className={styles.navLinks}>
                         <Link to="/" className={styles.navLink}>Inicio</Link>
                         <Link to="/dashboard" className={styles.navLink}>Dashboard</Link>
-                        <div className={styles.userMenu}>
-                            <div className={styles.userInfo}>
-                                <span className={styles.userName}>{user?.name}</span>
-                                <span className={styles.userPoints}>
-                                    ⭐ {user?.points || 0} pts · Nivel {user?.level || 1}
-                                </span>
-                            </div>
-                            <button onClick={logout} className={styles.logoutBtn}>
-                                Salir
-                            </button>
-                        </div>
+                        <Link to="/profile" className={styles.profileButton}>
+                                {user?.avatar ? (
+                                    <img 
+                                        src={`http://localhost:3000${user.avatar}`}
+                                        alt={user.name}
+                                        className={styles.avatarSmall}
+                                    />
+                                ) : (
+                                    <div className={styles.avatarSmallPlaceholder}>
+                                        {user?.name?.charAt(0).toUpperCase() || '?'}
+                                    </div>
+                                )}
+                                <span className={styles.profileName}>{user?.name}</span>
+                        </Link>
+                        <button onClick={logout} className={styles.logoutBtn}>
+                            Salir
+                        </button>
                     </div>
                 </div>
             </nav>
