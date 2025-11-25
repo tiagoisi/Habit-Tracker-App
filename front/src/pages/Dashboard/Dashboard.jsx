@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+﻿import { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@contexts/AuthContext';
 import { habitService } from '@services/habitService';
@@ -65,6 +65,44 @@ const runConfetti = () => {
     });
 };
 
+// 🌅 Función para obtener el saludo según la hora
+const getGreeting = () => {
+    const hour = new Date().getHours();
+    
+    if (hour >= 5 && hour < 12) {
+        return {
+            text: 'Buenos días',
+            emoji: '☀️',
+            color: '#fbbf24',
+        };
+    } else if (hour >= 12 && hour < 19) {
+        return {
+            text: 'Buenas tardes',
+            emoji: '🌤️',
+            color: '#f97316',
+        };
+    } else {
+        return {
+            text: 'Buenas noches',
+            emoji: '🌙',
+            color: '#8b5cf6',
+        };
+    }
+};
+
+// 💬 Función para obtener mensaje motivacional según la hora
+const getMotivationalMessage = () => {
+    const hour = new Date().getHours();
+    
+    if (hour >= 5 && hour < 12) {
+        return 'Comenzá el día con energía 💪';
+    } else if (hour >= 12 && hour < 19) {
+        return 'Continuá construyendo tu mejor versión';
+    } else {
+        return 'Reflexioná sobre tu progreso de hoy ✨';
+    }
+};
+
 const Dashboard = () => {
     const { user, logout } = useAuth();
     const [habits, setHabits] = useState([]);
@@ -78,6 +116,10 @@ const Dashboard = () => {
     const [filter, setFilter] = useState('all');
     const [sortBy, setSortBy] = useState('name');
     const [searchTerm, setSearchTerm] = useState('');
+
+    // Saludo dependiendo hora
+    const greeting = getGreeting();
+    const motivationalMessage = getMotivationalMessage();
 
     useEffect(() => {
         loadData();
@@ -377,14 +419,22 @@ const Dashboard = () => {
             </nav>
 
             <main className={styles.main}>
-                {/* Hero Section */}
+                {/* Hero Section - REEMPLAZA ESTA SECCIÓN */}
                 <div className={styles.heroSection}>
                     <div className={styles.heroContent}>
-                        <h1 className={styles.heroTitle}>
-                            ¡Hola, {user?.name}! 👋
+                        <h1 
+                            className={styles.heroTitle}
+                            style={{
+                                background: `linear-gradient(135deg, ${greeting.color} 0%, #10b981 100%)`,
+                                WebkitBackgroundClip: 'text',
+                                WebkitTextFillColor: 'transparent',
+                                backgroundClip: 'text',
+                            }}
+                        >
+                            {greeting.emoji} {greeting.text}, {user?.name}!
                         </h1>
                         <p className={styles.heroSubtitle}>
-                            Continuá construyendo tu mejor versión
+                            {motivationalMessage}
                         </p>
                     </div>
                     
