@@ -8,6 +8,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import styles from './Dashboard.module.css';
 import toast from 'react-hot-toast';
 import confetti from 'canvas-confetti';
+import ExportButton from '@/components/ExportButton/ExportButton';
 
 // Componente de Skeleton Loader
 const SkeletonCard = () => (
@@ -97,9 +98,9 @@ const getMotivationalMessage = () => {
     if (hour >= 5 && hour < 12) {
         return 'Comenzá el día con energía 💪';
     } else if (hour >= 12 && hour < 19) {
-        return 'Continuá construyendo tu mejor versión';
+        return 'Continuá construyendo tu mejor versión 🎯';
     } else {
-        return 'Reflexioná sobre tu progreso de hoy ✨';
+        return 'Reflexioná sobre tu progreso de hoy 📈';
     }
 };
 
@@ -419,7 +420,6 @@ const Dashboard = () => {
             </nav>
 
             <main className={styles.main}>
-                {/* Hero Section - REEMPLAZA ESTA SECCIÓN */}
                 <div className={styles.heroSection}>
                     <div className={styles.heroContent}>
                         <h1 
@@ -596,11 +596,21 @@ const Dashboard = () => {
                 <div className={styles.habitsSection}>
                     <div className={styles.sectionHeader}>
                         <h3 className={styles.sectionTitle}>Mis Hábitos</h3>
+                        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                        {/* Botón de exportar */}
+                        {habits.length > 0 && (
+                            <ExportButton 
+                                habits={habits}
+                                summary={summary}
+                                userName={user?.name}
+                            />
+                        )}
                         <button onClick={handleNewHabit} className={styles.addButton}>
                             <span className={styles.addIcon}>+</span>
                             Nuevo Hábito
                         </button>
-                    </div>
+                        </div>
+                        </div>
 
                     {habits.length === 0 ? (
                         <div className={styles.emptyState}>
