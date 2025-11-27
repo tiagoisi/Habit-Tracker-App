@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import styles from './HabitCard.module.css';
 
 const HabitCard = ({ habit, onComplete, onUncomplete, onEdit, onDelete }) => {
@@ -35,6 +35,72 @@ const HabitCard = ({ habit, onComplete, onUncomplete, onEdit, onDelete }) => {
             drawSparkline();
         }
     }, [habit.sparklineData, habit.monthlyHabitRate]);
+
+    // 📊 Calcular comparación adaptativa según datos disponibles
+    const weekComparison = useMemo(() => {
+        if (!habit.sparklineData || habit.sparklineData.length < 2) return null;
+
+        const dataLength = habit.sparklineData.length;
+        
+        // Si tenemos 28+ días: comparar últimos 14 vs 14 anteriores
+        if (dataLength >= 28) {
+            const currentPeriod = habit.sparklineData.slice(-14);
+            const previousPeriod = habit.sparklineData.slice(-28, -14);
+            
+            const currentTotal = currentPeriod.reduce((sum, val) => sum + val, 0);
+            const previousTotal = previousPeriod.reduce((sum, val) => sum + val, 0);
+
+            if (previousTotal === 0) {
+                return currentTotal > 0 ? { change: 100, type: 'positive' } : null;
+            }
+
+            const percentageChange = Math.round(((currentTotal - previousTotal) / previousTotal) * 100);
+
+            return {
+                change: percentageChange,
+                type: percentageChange > 0 ? 'positive' : percentageChange < 0 ? 'negative' : 'neutral',
+            };
+        }
+        
+        // Si tenemos 14-27 días: comparar últimos 7 vs 7 anteriores
+        if (dataLength >= 14) {
+            const currentPeriod = habit.sparklineData.slice(-7);
+            const previousPeriod = habit.sparklineData.slice(-14, -7);
+            
+            const currentTotal = currentPeriod.reduce((sum, val) => sum + val, 0);
+            const previousTotal = previousPeriod.reduce((sum, val) => sum + val, 0);
+
+            if (previousTotal === 0) {
+                return currentTotal > 0 ? { change: 100, type: 'positive' } : null;
+            }
+
+            const percentageChange = Math.round(((currentTotal - previousTotal) / previousTotal) * 100);
+
+            return {
+                change: percentageChange,
+                type: percentageChange > 0 ? 'positive' : percentageChange < 0 ? 'negative' : 'neutral',
+            };
+        }
+        
+        // Si tenemos 2-13 días: comparar mitad actual vs mitad anterior
+        const halfPoint = Math.floor(dataLength / 2);
+        const currentPeriod = habit.sparklineData.slice(halfPoint);
+        const previousPeriod = habit.sparklineData.slice(0, halfPoint);
+        
+        const currentTotal = currentPeriod.reduce((sum, val) => sum + val, 0);
+        const previousTotal = previousPeriod.reduce((sum, val) => sum + val, 0);
+
+        if (previousTotal === 0) {
+            return currentTotal > 0 ? { change: 100, type: 'positive' } : null;
+        }
+
+        const percentageChange = Math.round(((currentTotal - previousTotal) / previousTotal) * 100);
+
+        return {
+            change: percentageChange,
+            type: percentageChange > 0 ? 'positive' : percentageChange < 0 ? 'negative' : 'neutral',
+        };
+    }, [habit.sparklineData]);
 
     const handleToggleComplete = async () => {
         setLoading(true);
@@ -132,17 +198,14 @@ const HabitCard = ({ habit, onComplete, onUncomplete, onEdit, onDelete }) => {
 
     const monthlyRate = habit.monthlyHabitRate || 0;
     let performanceColor = '#64748b';
-    let performanceLabel = 'Sin datos';
+    let performanceLabel = 'p';
     
     if (monthlyRate >= 70) {
         performanceColor = '#10b981';
-        performanceLabel = 'Excelente';
     } else if (monthlyRate >= 50) {
         performanceColor = '#f59e0b';
-        performanceLabel = 'Bueno';
     } else if (monthlyRate > 0) {
         performanceColor = '#ef4444';
-        performanceLabel = 'Mejorable';
     }
 
     const hasSparklineData = habit.sparklineData && 
@@ -239,10 +302,29 @@ const HabitCard = ({ habit, onComplete, onUncomplete, onEdit, onDelete }) => {
                 <div className={styles.sparklineSection}>
                     <div className={styles.sparklineHeader}>
                         <span className={styles.sparklineTitle}>Últimos 14 días</span>
-                        <span className={styles.sparklineBadge}>
-                            {performanceLabel} · {monthlyRate}%
-                        </span>
+                        
+                        {/* Badges de rendimiento y comparación */}
+                        <div className={styles.sparklineInfo}>
+                            <span className={styles.sparklineBadge} title='Promedio'>
+                                {performanceLabel} - {monthlyRate}%
+                            </span>
+
+                            {/* Badge de comparación semanal */}
+                            {weekComparison && weekComparison.change !== 0 && (
+                                <span className={`${styles.weekComparison} ${styles[weekComparison.type]}`} title='Tendencia'>
+                                    t
+                                    <span className={styles.comparisonIcon}>
+                                        {weekComparison.type === 'positive' ? '↗' : 
+                                         weekComparison.type === 'negative' ? '↘' : '→'}
+                                    </span>
+                                    <span className={styles.comparisonValue}>
+                                        {weekComparison.change > 0 ? '+ ' : ''}{weekComparison.change}%
+                                    </span>
+                                </span>
+                            )}
+                        </div>
                     </div>
+                    
                     <div className={styles.sparklineWrapper}>
                         <canvas
                             ref={canvasRef}
