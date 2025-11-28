@@ -9,6 +9,9 @@ import styles from './Dashboard.module.css';
 import toast from 'react-hot-toast';
 import confetti from 'canvas-confetti';
 import ExportButton from '@/components/ExportButton/ExportButton';
+import ViewToggle from '@/components/HabitListView/ViewToggle';
+import listStyles from '@components/HabitListView/HabitListView.module.css';
+import HabitListItem from '@/components/HabitListView/HabitListView';
 
 // Componente de Skeleton Loader
 const SkeletonCard = () => (
@@ -121,6 +124,17 @@ const Dashboard = () => {
     // Saludo dependiendo hora
     const greeting = getGreeting();
     const motivationalMessage = getMotivationalMessage();
+
+    // habit views
+     const [viewMode, setViewMode] = useState(() => {
+        const saved = localStorage.getItem('habitViewMode');
+        return saved || 'grid';
+    });
+
+    // Guardar preferencia cuando cambie
+    useEffect(() => {
+        localStorage.setItem('habitViewMode', viewMode);
+    }, [viewMode]);
 
     useEffect(() => {
         loadData();
@@ -597,6 +611,12 @@ const Dashboard = () => {
                     <div className={styles.sectionHeader}>
                         <h3 className={styles.sectionTitle}>Mis Hábitos</h3>
                         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                        {/* NUEVO: Toggle de vista */}
+                            <ViewToggle 
+                                view={viewMode} 
+                                onViewChange={setViewMode} 
+                            />
+
                         {/* Botón de exportar */}
                         {habits.length > 0 && (
                             <ExportButton 
@@ -719,23 +739,44 @@ const Dashboard = () => {
                                     </button>
                                 </div>
                             ) : (
-                                <div className={styles.habitsList}>
-                                    {filteredAndSortedHabits.map((habit, index) => (
-                                        <div 
-                                            key={habit.id}
-                                            className={styles.habitCardWrapper}
-                                            style={{ animationDelay: `${index * 0.05}s` }}
-                                        >
-                                            <HabitCard
-                                                habit={habit}
-                                                onComplete={handleComplete}
-                                                onUncomplete={handleUncomplete}
-                                                onEdit={handleEdit}
-                                                onDelete={handleDelete}
-                                            />
+                                <>
+                                    {/* Vista GRID (Cards) */}
+                                    {viewMode === 'grid' && (
+                                        <div className={styles.habitsList}>
+                                            {filteredAndSortedHabits.map((habit, index) => (
+                                                <div 
+                                                    key={habit.id}
+                                                    className={styles.habitCardWrapper}
+                                                    style={{ animationDelay: `${index * 0.05}s` }}
+                                                >
+                                                    <HabitCard
+                                                        habit={habit}
+                                                        onComplete={handleComplete}
+                                                        onUncomplete={handleUncomplete}
+                                                        onEdit={handleEdit}
+                                                        onDelete={handleDelete}
+                                                    />
+                                                </div>
+                                            ))}
                                         </div>
-                                    ))}
-                                </div>
+                                    )}
+
+                                    {/* Vista LIST (Compacta) - NUEVO */}
+                                    {viewMode === 'list' && (
+                                        <div className={listStyles.listContainer}>
+                                            {filteredAndSortedHabits.map((habit) => (
+                                                <HabitListItem
+                                                    key={habit.id}
+                                                    habit={habit}
+                                                    onComplete={handleComplete}
+                                                    onUncomplete={handleUncomplete}
+                                                    onEdit={handleEdit}
+                                                    onDelete={handleDelete}
+                                                />
+                                            ))}
+                                        </div>
+                                    )}
+                                </>
                             )}
                         </>
                     )}
