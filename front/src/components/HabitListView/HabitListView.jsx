@@ -30,7 +30,10 @@ const HabitListItem = ({ habit, onComplete, onUncomplete, onEdit, onDelete }) =>
 
     // Calcular comparación
     const comparison = useMemo(() => {
-        if (!habit.sparklineData || habit.sparklineData.length < 2) return null;
+        // Si no hay datos suficientes, mostrar 0%
+        if (!habit.sparklineData || habit.sparklineData.length < 2) {
+            return { change: 0, type: 'neutral' };
+        }
 
         const dataLength = habit.sparklineData.length;
         
@@ -38,7 +41,7 @@ const HabitListItem = ({ habit, onComplete, onUncomplete, onEdit, onDelete }) =>
             const current = habit.sparklineData.slice(-14).reduce((sum, val) => sum + val, 0);
             const previous = habit.sparklineData.slice(-28, -14).reduce((sum, val) => sum + val, 0);
             
-            if (previous === 0) return current > 0 ? { change: 100, type: 'positive' } : null;
+            if (previous === 0) return current > 0 ? { change: 100, type: 'positive' } : { change: 0, type: 'neutral' };
             const percentageChange = Math.round(((current - previous) / previous) * 100);
             return {
                 change: percentageChange,
@@ -50,7 +53,7 @@ const HabitListItem = ({ habit, onComplete, onUncomplete, onEdit, onDelete }) =>
             const current = habit.sparklineData.slice(-7).reduce((sum, val) => sum + val, 0);
             const previous = habit.sparklineData.slice(-14, -7).reduce((sum, val) => sum + val, 0);
             
-            if (previous === 0) return current > 0 ? { change: 100, type: 'positive' } : null;
+            if (previous === 0) return current > 0 ? { change: 100, type: 'positive' } : { change: 0, type: 'neutral' };
             const percentageChange = Math.round(((current - previous) / previous) * 100);
             return {
                 change: percentageChange,
@@ -62,7 +65,7 @@ const HabitListItem = ({ habit, onComplete, onUncomplete, onEdit, onDelete }) =>
         const current = habit.sparklineData.slice(halfPoint).reduce((sum, val) => sum + val, 0);
         const previous = habit.sparklineData.slice(0, halfPoint).reduce((sum, val) => sum + val, 0);
         
-        if (previous === 0) return current > 0 ? { change: 100, type: 'positive' } : null;
+        if (previous === 0) return current > 0 ? { change: 100, type: 'positive' } : { change: 0, type: 'neutral' };
         const percentageChange = Math.round(((current - previous) / previous) * 100);
         return {
             change: percentageChange,
@@ -88,18 +91,18 @@ const HabitListItem = ({ habit, onComplete, onUncomplete, onEdit, onDelete }) =>
     };
 
     const monthlyRate = habit.monthlyHabitRate || 0;
-    let performanceClass = 'poor';
-    let performanceLabel = 'Sin datos';
+    let performanceClass = 'neutral';
+    let performanceIcon = '→';
     
     if (monthlyRate >= 70) {
         performanceClass = 'excellent';
-        performanceLabel = `${monthlyRate}%`;
+        performanceIcon = '↗';
     } else if (monthlyRate >= 50) {
         performanceClass = 'good';
-        performanceLabel = `${monthlyRate}%`;
+        performanceIcon = '→';
     } else if (monthlyRate > 0) {
         performanceClass = 'poor';
-        performanceLabel = `${monthlyRate}%`;
+        performanceIcon = '↘';
     }
 
     return (
@@ -152,8 +155,8 @@ const HabitListItem = ({ habit, onComplete, onUncomplete, onEdit, onDelete }) =>
                 </div>
             </div>
 
-            {/* Comparison Badge */}
-            {comparison && comparison.change !== 0 && (
+            {/* Comparison Badge - SIEMPRE VISIBLE */}
+            {comparison && (
                 <div className={`${styles.listComparison} ${styles[comparison.type]}`}>
                     <span>
                         {comparison.type === 'positive' ? '↗' : 
@@ -169,7 +172,8 @@ const HabitListItem = ({ habit, onComplete, onUncomplete, onEdit, onDelete }) =>
             {/* Performance Badge */}
             {monthlyRate > 0 && (
                 <div className={`${styles.listPerformance} ${styles[performanceClass]}`}>
-                    {performanceLabel}
+                    <span>{performanceIcon}</span>
+                    <span>{monthlyRate}%</span>
                 </div>
             )}
 

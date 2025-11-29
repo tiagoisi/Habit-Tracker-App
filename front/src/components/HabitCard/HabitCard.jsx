@@ -38,7 +38,10 @@ const HabitCard = ({ habit, onComplete, onUncomplete, onEdit, onDelete }) => {
 
     // 📊 Calcular comparación adaptativa según datos disponibles
     const weekComparison = useMemo(() => {
-        if (!habit.sparklineData || habit.sparklineData.length < 2) return null;
+        // Si no hay datos suficientes, mostrar 0%
+        if (!habit.sparklineData || habit.sparklineData.length < 2) {
+            return { change: 0, type: 'neutral' };
+        }
 
         const dataLength = habit.sparklineData.length;
         
@@ -51,7 +54,7 @@ const HabitCard = ({ habit, onComplete, onUncomplete, onEdit, onDelete }) => {
             const previousTotal = previousPeriod.reduce((sum, val) => sum + val, 0);
 
             if (previousTotal === 0) {
-                return currentTotal > 0 ? { change: 100, type: 'positive' } : null;
+                return currentTotal > 0 ? { change: 100, type: 'positive' } : { change: 0, type: 'neutral' };
             }
 
             const percentageChange = Math.round(((currentTotal - previousTotal) / previousTotal) * 100);
@@ -71,7 +74,7 @@ const HabitCard = ({ habit, onComplete, onUncomplete, onEdit, onDelete }) => {
             const previousTotal = previousPeriod.reduce((sum, val) => sum + val, 0);
 
             if (previousTotal === 0) {
-                return currentTotal > 0 ? { change: 100, type: 'positive' } : null;
+                return currentTotal > 0 ? { change: 100, type: 'positive' } : { change: 0, type: 'neutral' };
             }
 
             const percentageChange = Math.round(((currentTotal - previousTotal) / previousTotal) * 100);
@@ -91,7 +94,7 @@ const HabitCard = ({ habit, onComplete, onUncomplete, onEdit, onDelete }) => {
         const previousTotal = previousPeriod.reduce((sum, val) => sum + val, 0);
 
         if (previousTotal === 0) {
-            return currentTotal > 0 ? { change: 100, type: 'positive' } : null;
+            return currentTotal > 0 ? { change: 100, type: 'positive' } : { change: 0, type: 'neutral' };
         }
 
         const percentageChange = Math.round(((currentTotal - previousTotal) / previousTotal) * 100);
@@ -198,14 +201,21 @@ const HabitCard = ({ habit, onComplete, onUncomplete, onEdit, onDelete }) => {
 
     const monthlyRate = habit.monthlyHabitRate || 0;
     let performanceColor = '#64748b';
-    let performanceLabel = 'p';
+    let performanceIcon = '→';
+    let performanceType = 'neutral';
     
     if (monthlyRate >= 70) {
         performanceColor = '#10b981';
+        performanceIcon = '↗';
+        performanceType = 'positive';
     } else if (monthlyRate >= 50) {
         performanceColor = '#f59e0b';
+        performanceIcon = '→';
+        performanceType = 'neutral';
     } else if (monthlyRate > 0) {
         performanceColor = '#ef4444';
+        performanceIcon = '↘';
+        performanceType = 'negative';
     }
 
     const hasSparklineData = habit.sparklineData && 
@@ -303,22 +313,24 @@ const HabitCard = ({ habit, onComplete, onUncomplete, onEdit, onDelete }) => {
                     <div className={styles.sparklineHeader}>
                         <span className={styles.sparklineTitle}>Últimos 14 días</span>
                         
-                        {/* Badges de rendimiento y comparación */}
+                        {/* INFO: Badges de rendimiento y comparación */}
                         <div className={styles.sparklineInfo}>
-                            <span className={styles.sparklineBadge} title='Promedio'>
-                                {performanceLabel} - {monthlyRate}%
+                            <span className={`${styles.sparklineBadge} ${styles[performanceType]}`} title='promedio'>
+                                p
+                                <span className={styles.performanceIcon}>{performanceIcon}</span>
+                                <span>{monthlyRate}%</span>
                             </span>
 
-                            {/* Badge de comparación semanal */}
-                            {weekComparison && weekComparison.change !== 0 && (
-                                <span className={`${styles.weekComparison} ${styles[weekComparison.type]}`} title='Tendencia'>
+                            {/* Badge de comparación semanal - SIEMPRE VISIBLE */}
+                            {weekComparison && (
+                                <span className={`${styles.weekComparison} ${styles[weekComparison.type]}`} title='tendencia'>
                                     t
                                     <span className={styles.comparisonIcon}>
                                         {weekComparison.type === 'positive' ? '↗' : 
                                          weekComparison.type === 'negative' ? '↘' : '→'}
                                     </span>
                                     <span className={styles.comparisonValue}>
-                                        {weekComparison.change > 0 ? '+ ' : ''}{weekComparison.change}%
+                                        {weekComparison.change > 0 ? '+ ' : weekComparison.change < 0 ? '- ' : ''}{Math.abs(weekComparison.change)}%
                                     </span>
                                 </span>
                             )}

@@ -638,9 +638,123 @@
 
 /* Sin cambios */
 .weekComparison.neutral {
-    background: rgba(100, 116, 139, 0.15);
     color: #94a3b8;
-    border: 1px solid rgba(100, 116, 139, 0.25);
+}
+
+/* Icono de flecha */
+.comparisonIcon {
+    font-size: 0.9rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+/* Texto de comparación */
+.comparisonText {
+    font-size: 0.75rem;
+    letter-spacing: 0.02em;
+}
+
+/* Porcentaje */
+.comparisonValue {
+    font-weight: 700;
+}
+
+/* Modificar el sparklineHeader para que sea flex-wrap */
+.sparklineHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+/* Contenedor para el badge y la comparación */
+.sparklineInfo {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+
+@media (max-width: 640px) {
+    .weekComparison {
+        font-size: 0.7rem;
+        padding: 0.3rem 0.65rem;
+        gap: 0.3rem;
+    }
+
+    .comparisonIcon {
+        font-size: 0.85rem;
+    }
+
+    .sparklineHeader {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .sparklineInfo {
+        width: 100%;
+        justify-content: space-between;
+    }
+}
+
+/* ========================================
+   COMPARACIÓN SEMANAL EN HABIT CARD
+   Agrega esto al final de HabitCard.module.css
+   ======================================== */
+
+/* Badge de comparación semanal */
+.weekComparison {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.75rem;
+    border-radius: 16px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-top: 0.5rem;
+    transition: all 0.3s ease;
+    animation: fadeInComparison 0.5s ease-out;
+}
+
+@keyframes fadeInComparison {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Comparación positiva (mejoró) */
+.weekComparison.positive {
+    color: #10b981;
+}
+
+.weekComparison.positive:hover {
+    background: rgba(16, 185, 129, 0.25);
+    transform: translateY(-2px);
+}
+
+/* Comparación negativa (empeoró) */
+.weekComparison.negative {
+    color: #ef4444;
+}
+
+.weekComparison.negative:hover {
+    transform: translateY(-2px);
+}
+
+/* Sin cambios */
+.weekComparison.neutral {
+    color: #94a3b8;
 }
 
 /* Icono de flecha */
