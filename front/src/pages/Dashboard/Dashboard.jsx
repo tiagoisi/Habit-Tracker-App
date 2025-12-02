@@ -12,6 +12,8 @@ import ExportButton from '@/components/ExportButton/ExportButton';
 import ViewToggle from '@/components/HabitListView/ViewToggle';
 import listStyles from '@components/HabitListView/HabitListView.module.css';
 import HabitListItem from '@/components/HabitListView/HabitListView';
+import CategoryFilter from '@/CategoryFilter/CategoryFilter';
+import { HABIT_CATEGORIES, getCategoryById } from '@/config/categories';
 
 // Componente de Skeleton Loader
 const SkeletonCard = () => (
@@ -130,6 +132,9 @@ const Dashboard = () => {
         const saved = localStorage.getItem('habitViewMode');
         return saved || 'grid';
     });
+    
+    // categorias
+    const [selectedCategory, setSelectedCategory] = useState('all');
 
     // Guardar preferencia cuando cambie
     useEffect(() => {
@@ -163,6 +168,7 @@ const Dashboard = () => {
     const filteredAndSortedHabits = useMemo(() => {
         let result = [...habits];
 
+        // Filtro por búsqueda
         if (searchTerm.trim()) {
             result = result.filter(habit => 
                 habit.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -170,6 +176,12 @@ const Dashboard = () => {
             );
         }
 
+        // NUEVO: Filtro por categoría
+        if (selectedCategory !== 'all') {
+            result = result.filter(h => h.category === selectedCategory);
+        }
+
+        // Filtro por estado (completado/pendiente)
         switch (filter) {
             case 'completed':
                 result = result.filter(h => h.completedToday);
@@ -181,12 +193,20 @@ const Dashboard = () => {
                 break;
         }
 
+        // Ordenamiento
         switch (sortBy) {
             case 'streak':
                 result.sort((a, b) => b.currentStreak - a.currentStreak);
                 break;
             case 'recent':
                 result.sort((a, b) => new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt));
+                break;
+            case 'category':
+                result.sort((a, b) => {
+                    const catA = getCategoryById(a.category || 'otro').name;
+                    const catB = getCategoryById(b.category || 'otro').name;
+                    return catA.localeCompare(catB);
+                });
                 break;
             case 'name':
             default:
@@ -195,7 +215,7 @@ const Dashboard = () => {
         }
 
         return result;
-    }, [habits, filter, sortBy, searchTerm]);
+    }, [habits, filter, sortBy, searchTerm, selectedCategory]); 
 
     // Cálculo del máximo de hábitos para el eje Y
     const maxActiveHabits = useMemo(() => {
@@ -647,6 +667,12 @@ const Dashboard = () => {
                         </div>
                     ) : (
                         <>
+                        {/* Filtro de categorías */}
+                            <CategoryFilter
+                                selectedCategory={selectedCategory}
+                                onCategoryChange={setSelectedCategory}
+                                habits={habits}
+                            />
                             {/* Barra de filtros y búsqueda */}
                             <div className={styles.filtersBar}>
                                 <div className={styles.searchBox}>
@@ -699,19 +725,21 @@ const Dashboard = () => {
                                         <option value="name">Nombre A-Z</option>
                                         <option value="streak">Mayor racha</option>
                                         <option value="recent">Más reciente</option>
+                                        <option value="category">Por categoría</option>
                                     </select>
                                 </div>
                             </div>
 
                             {/* Contador de resultados */}
-                            {(searchTerm || filter !== 'all') && (
+                            {(searchTerm || filter !== 'all' || selectedCategory !== 'all' ) && (
                                 <div className={styles.resultsInfo}>
                                     Mostrando {filteredAndSortedHabits.length} de {habits.length} hábitos
-                                    {searchTerm && (
+                                    {(searchTerm || selectedCategory !== 'all') && (
                                         <button
                                             onClick={() => {
                                                 setSearchTerm('');
-                                                setFilter('all');
+                                                    setFilter('all');
+                                                    setSelectedCategory('all');
                                             }}
                                             className={styles.clearFilters}
                                         >
