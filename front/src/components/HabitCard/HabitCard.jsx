@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import styles from './HabitCard.module.css';
+import { getCategoryById } from '@/config/categories';
 
 const HabitCard = ({ habit, onComplete, onUncomplete, onEdit, onDelete }) => {
     const [loading, setLoading] = useState(false);
@@ -222,12 +223,25 @@ const HabitCard = ({ habit, onComplete, onUncomplete, onEdit, onDelete }) => {
                             Array.isArray(habit.sparklineData) && 
                             habit.sparklineData.length > 0;
 
+    // Obtener información de la categoría
+    const category = getCategoryById(habit.category || 'otro');
+
+    // Convertir color hex a RGB
+    const hexToRgb = (hex) => {
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result 
+            ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}`
+            : '16, 185, 129';
+    };
+
     return (
         <div 
             className={`${styles.card} ${isCompleted ? styles.cardCompleted : ''}`}
             style={{ 
-                '--accent-color': habit.color || '#10b981',
-                '--performance-color': performanceColor
+                '--accent-color': habit.color || category.color,
+                '--performance-color': performanceColor,
+                '--category-color': category.color,
+                '--category-color-rgb': hexToRgb(category.color),
             }}
         >
             {/* Header con icono y menú */}
@@ -274,7 +288,16 @@ const HabitCard = ({ habit, onComplete, onUncomplete, onEdit, onDelete }) => {
 
             {/* Contenido principal */}
             <div className={styles.content}>
-                <h3 className={styles.title}>{habit.title}</h3>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
+                    <h3 className={styles.title} style={{ margin: 0 }}>
+                        {habit.title}
+                    </h3>
+                    {/* Badge de categoría */}
+                    <span className={styles.habitCategoryBadge}>
+                        <span className={styles.categoryIcon}>{category.icon}</span>
+                        <span>{category.name}</span>
+                    </span>
+                </div>
                 {habit.description && (
                     <p className={styles.description}>{habit.description}</p>
                 )}
@@ -313,7 +336,7 @@ const HabitCard = ({ habit, onComplete, onUncomplete, onEdit, onDelete }) => {
                     <div className={styles.sparklineHeader}>
                         <span className={styles.sparklineTitle}>Últimos 14 días</span>
                         
-                        {/* INFO: Badges de rendimiento y comparación */}
+                        {/* Badges de rendimiento y comparación */}
                         <div className={styles.sparklineInfo}>
                             <span className={`${styles.sparklineBadge} ${styles[performanceType]}`} title='promedio'>
                                 p

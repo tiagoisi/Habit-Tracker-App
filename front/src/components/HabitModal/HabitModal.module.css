@@ -5,7 +5,7 @@
     right: 0;
     bottom: 0;
     background: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(2px);
+    backdrop-filter: blur(4px);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -15,12 +15,8 @@
 }
 
 @keyframes fadeIn {
-    from {
-        opacity: 0;
-    }
-    to {
-        opacity: 1;
-    }
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
 .modal {
@@ -30,9 +26,14 @@
     border-radius: 1.25rem;
     width: 100%;
     max-width: 500px;
-    max-height: 90vh;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
     animation: slideUp 0.3s ease;
+    
+    /* Configuración para el scroll interno y altura máxima */
+    display: flex;
+    flex-direction: column;
+    max-height: 90vh; /* Nunca será más alto que el 90% de la pantalla */
+    overflow: hidden; /* Recorta las esquinas y contenido desbordante */
 }
 
 @keyframes slideUp {
@@ -48,10 +49,37 @@
 
 .header {
     display: flex;
-    justify-content: end;
+    justify-content: flex-end;
     align-items: center;
     padding: 1rem;
-    padding-bottom: 0;
+    padding-bottom: 0.5rem;
+    flex-shrink: 0; /* Evita que el header se aplaste */
+    background: transparent;
+    z-index: 10;
+}
+
+/* NUEVO: Contenedor con scroll */
+.scrollableContent {
+    overflow-y: auto; /* Habilita el scroll vertical solo aquí */
+    flex-grow: 1;     /* Ocupa todo el espacio restante */
+    
+    /* Estilización del scrollbar para navegadores compatibles */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(16, 185, 129, 0.3) transparent;
+}
+
+/* Scrollbar Webkit (Chrome, Edge, Safari) */
+.scrollableContent::-webkit-scrollbar {
+    width: 6px;
+}
+
+.scrollableContent::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.scrollableContent::-webkit-scrollbar-thumb {
+    background-color: rgba(16, 185, 129, 0.3);
+    border-radius: 20px;
 }
 
 .closeBtn {
@@ -76,6 +104,7 @@
 
 .form {
     padding: 1.5rem;
+    padding-top: 0.5rem;
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
@@ -105,6 +134,7 @@
     transition: all 0.3s ease;
     outline: none;
     font-family: inherit;
+    width: 100%; /* Asegura que ocupen el ancho disponible */
 }
 
 .input::placeholder,
@@ -120,10 +150,53 @@
     box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
 }
 
+.categoryGrid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+}
+
+.categoryBtn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem 0.75rem;
+    background: rgba(var(--category-color-rgb, 16, 185, 129), 0.1);
+    border: 2px solid rgba(var(--category-color-rgb, 16, 185, 129), 0.2);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.categoryBtn:hover {
+    background: rgba(var(--category-color-rgb, 16, 185, 129), 0.2);
+    border-color: rgba(var(--category-color-rgb, 16, 185, 129), 0.4);
+    transform: scale(1.05);
+}
+
+.categoryBtn.selected {
+    background: rgba(var(--category-color-rgb, 16, 185, 129), 0.25);
+    border-color: var(--category-color, #10b981);
+    box-shadow: 0 0 0 2px rgba(var(--category-color-rgb, 16, 185, 129), 0.3);
+}
+
+.categoryBtnIcon {
+    font-size: 1.75rem;
+    line-height: 1;
+}
+
+.categoryBtnText {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #e2e8f0;
+    text-align: center;
+}
+
 .iconGrid,
 .colorGrid {
     display: grid;
-    grid-template-columns: repeat(6, 1fr);
+    grid-template-columns: repeat(6, 1fr); /* Ajustado para que quepan mejor */
     gap: 0.5rem;
 }
 
@@ -159,7 +232,9 @@
     cursor: pointer;
     transition: all 0.2s;
     position: relative;
-    height: 3.5rem;
+    height: 2rem;
+    width: 2rem;
+    margin: 0 auto;
 }
 
 .colorBtn:hover {
@@ -188,6 +263,7 @@
     display: flex;
     gap: 1rem;
     padding-top: 0.5rem;
+    margin-top: auto; /* Empuja los botones al final si sobra espacio */
 }
 
 .cancelBtn,
@@ -230,11 +306,23 @@
 }
 
 @media (max-width: 640px) {
+    .modal {
+        max-height: 95vh;
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+        align-self: flex-end; /* Efecto bottom-sheet */
+        margin-bottom: 0;
+    }
+
+    .categoryGrid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
     .iconGrid {
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(6, 1fr);
     }
     
     .colorGrid {
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(6, 1fr);
     }
 }
